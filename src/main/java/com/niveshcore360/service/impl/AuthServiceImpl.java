@@ -31,18 +31,21 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserSession userSession;
     private final AuditLogService auditLogService;
+    private final com.niveshcore360.repository.RoleRepository roleRepository;
 
     @Autowired
     public AuthServiceImpl(UserRepository userRepository,
                            PortfolioRepository portfolioRepository,
                            PasswordEncoder passwordEncoder,
                            UserSession userSession,
-                           AuditLogService auditLogService) {
+                           AuditLogService auditLogService,
+                           com.niveshcore360.repository.RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.portfolioRepository = portfolioRepository;
         this.passwordEncoder = passwordEncoder;
         this.userSession = userSession;
         this.auditLogService = auditLogService;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -54,12 +57,19 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthenticationException("Email is already registered.");
         }
 
+        String roleName = userDTO.getRole() != null ? userDTO.getRole() : "ROLE_USER";
+        com.niveshcore360.entity.Role dbRole = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new AuthenticationException("Requested security role does not exist: " + roleName));
+
+        java.util.Set<com.niveshcore360.entity.Role> userRoles = new java.util.HashSet<>();
+        userRoles.add(dbRole);
+
         User user = User.builder()
                 .username(userDTO.getUsername())
                 .email(userDTO.getEmail())
                 .fullName(userDTO.getFullName())
                 .password(passwordEncoder.encode(userDTO.getPassword()))
-                .role(userDTO.getRole() != null ? userDTO.getRole() : Role.USER)
+                .roles(userRoles)
                 .build();
 
         User savedUser = userRepository.save(user);

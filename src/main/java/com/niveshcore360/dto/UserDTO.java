@@ -1,6 +1,5 @@
 package com.niveshcore360.dto;
 
-import com.niveshcore360.entity.Role;
 import lombok.*;
 
 /**
@@ -16,5 +15,5 @@ public class UserDTO {
     private String email;
     private String fullName;
     private String password;
-    private Role role;
+    private String role;
 }

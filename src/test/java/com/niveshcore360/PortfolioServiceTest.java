@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -47,10 +46,12 @@ public class PortfolioServiceTest {
                 .name("Growth Portfolio")
                 .build();
 
-        Stock stock = Stock.builder()
-                .ticker("INFY")
-                .companyName("Infosys")
+        Asset asset = Asset.builder()
+                .id(1L)
+                .symbol("INFY")
+                .name("Infosys")
                 .currentPrice(new BigDecimal("1500.00")) // current
+                .assetType(AssetType.STOCK)
                 .build();
 
         // 10 units bought at 1000.00 each -> Investment: 10000.00, Current value: 15000.00
@@ -58,7 +59,7 @@ public class PortfolioServiceTest {
                 .id(1L)
                 .portfolio(portfolio)
                 .assetType(AssetType.STOCK)
-                .stock(stock)
+                .asset(asset)
                 .quantity(new BigDecimal("10.0000"))
                 .purchasePrice(new BigDecimal("1000.00"))
                 .purchaseDate(LocalDate.now())

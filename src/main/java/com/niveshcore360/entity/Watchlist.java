@@ -29,19 +29,10 @@ public class Watchlist {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "watchlist_stocks",
+        name = "watchlist_assets",
         joinColumns = @JoinColumn(name = "watchlist_id"),
-        inverseJoinColumns = @JoinColumn(name = "stock_id")
+        inverseJoinColumns = @JoinColumn(name = "asset_id")
     )
     @Builder.Default
-    private Set<Stock> stocks = new HashSet<>();
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "watchlist_mutual_funds",
-        joinColumns = @JoinColumn(name = "watchlist_id"),
-        inverseJoinColumns = @JoinColumn(name = "mutual_fund_id")
-    )
-    @Builder.Default
-    private Set<MutualFund> mutualFunds = new HashSet<>();
+    private Set<Asset> assets = new HashSet<>();
 }

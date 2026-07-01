@@ -79,4 +79,61 @@ public class PDFGeneratorUtil {
         document.add(table);
         document.close();
     }
+
+    /**
+     * Generates a PDF summarizing the AI chat log history and client risk assessment metrics.
+     */
+    public static void generateFinancialReportPDF(
+            com.niveshcore360.entity.User user, 
+            java.util.Optional<com.niveshcore360.entity.RiskAssessment> assessmentOpt, 
+            List<com.niveshcore360.entity.ChatHistory> history, 
+            java.io.OutputStream outputStream) 
+            throws DocumentException {
+        Document document = new Document();
+        PdfWriter.getInstance(document, outputStream);
+        document.open();
+
+        // 1. Title Section
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, new Color(139, 92, 246)); // Purple 500
+        Paragraph titlePara = new Paragraph("NiveshCore360 - AI Wealth Advisory Report", titleFont);
+        titlePara.setAlignment(Element.ALIGN_CENTER);
+        document.add(titlePara);
+
+        // 2. Subtitle Section
+        Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
+        Paragraph subtitlePara = new Paragraph("Client: " + user.getFullName() + " | Date: " + java.time.LocalDate.now() + "\n\n", subtitleFont);
+        subtitlePara.setAlignment(Element.ALIGN_CENTER);
+        document.add(subtitlePara);
+
+        // 3. Client Profile Segment
+        Font sectionHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, new Color(15, 23, 42)); // Slate 900
+        Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
+
+        document.add(new Paragraph("Client Profile Details", sectionHeaderFont));
+        document.add(new Paragraph("----------------------------------------------------------------", subtitleFont));
+        if (assessmentOpt.isPresent()) {
+            com.niveshcore360.entity.RiskAssessment ra = assessmentOpt.get();
+            document.add(new Paragraph("Risk Score: " + ra.getRiskScore() + "/100", bodyFont));
+            document.add(new Paragraph("Risk Appetite: " + ra.getRiskAppetite(), bodyFont));
+            document.add(new Paragraph("Investment Horizon: " + ra.getInvestmentHorizon() + " years", bodyFont));
+        } else {
+            document.add(new Paragraph("Risk Assessment Profile not completed yet.", bodyFont));
+        }
+        document.add(new Paragraph("\n"));
+
+        // 4. Advisory Details Section
+        document.add(new Paragraph("AI Advisory Log Details", sectionHeaderFont));
+        document.add(new Paragraph("----------------------------------------------------------------\n", subtitleFont));
+
+        for (com.niveshcore360.entity.ChatHistory chat : history) {
+            String roleStr = chat.getSender().equals("USER") ? "User Input: " : "AI Advisor Recommendation: ";
+            Font roleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, chat.getSender().equals("USER") ? new Color(79, 70, 229) : new Color(16, 185, 129));
+            Paragraph rolePara = new Paragraph(roleStr, roleFont);
+            Paragraph textPara = new Paragraph(chat.getMessage() + "\n\n", bodyFont);
+            document.add(rolePara);
+            document.add(textPara);
+        }
+
+        document.close();
+    }
 }

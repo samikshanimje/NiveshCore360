@@ -29,12 +29,8 @@ public class Investment {
     private AssetType assetType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id")
-    private Stock stock;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mutual_fund_id")
-    private MutualFund mutualFund;
+    @JoinColumn(name = "asset_id", nullable = false)
+    private Asset asset;
 
     @Column(nullable = false, precision = 15, scale = 4)
     private BigDecimal quantity;

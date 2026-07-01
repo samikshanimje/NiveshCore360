@@ -159,7 +159,7 @@ public class AdminView extends JPanel {
                         u.getUsername(),
                         u.getEmail(),
                         u.getFullName() != null ? u.getFullName() : "",
-                        u.getRole().toString()
+                        u.getRoles() == null || u.getRoles().isEmpty() ? "ROLE_USER" : u.getRoles().iterator().next().getName()
                 });
             }
 

@@ -6,6 +6,7 @@ import com.niveshcore360.entity.User;
 import com.niveshcore360.exception.AuthenticationException;
 import com.niveshcore360.repository.PortfolioRepository;
 import com.niveshcore360.repository.UserRepository;
+import com.niveshcore360.repository.RoleRepository;
 import com.niveshcore360.security.UserSession;
 import com.niveshcore360.service.AuditLogService;
 import com.niveshcore360.service.impl.AuthServiceImpl;
@@ -15,11 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -37,6 +37,8 @@ public class AuthServiceTest {
     private UserSession userSession;
     @Mock
     private AuditLogService auditLogService;
+    @Mock
+    private RoleRepository roleRepository;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -48,11 +50,12 @@ public class AuthServiceTest {
 
     @Test
     public void testLoginSuccess() {
+        Role uRole = Role.builder().name("ROLE_USER").build();
         User user = User.builder()
                 .username("samiksha")
                 .password("encoded_pass")
                 .email("samiksha@gmail.com")
-                .role(Role.USER)
+                .roles(Set.of(uRole))
                 .build();
 
         when(userRepository.findByUsername("samiksha")).thenReturn(Optional.of(user));
@@ -67,10 +70,11 @@ public class AuthServiceTest {
 
     @Test
     public void testLoginWrongPassword() {
+        Role uRole = Role.builder().name("ROLE_USER").build();
         User user = User.builder()
                 .username("samiksha")
                 .password("encoded_pass")
-                .role(Role.USER)
+                .roles(Set.of(uRole))
                 .build();
 
         when(userRepository.findByUsername("samiksha")).thenReturn(Optional.of(user));

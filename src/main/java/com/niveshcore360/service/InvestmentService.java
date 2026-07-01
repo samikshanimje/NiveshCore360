@@ -2,8 +2,6 @@ package com.niveshcore360.service;
 
 import com.niveshcore360.dto.InvestmentDTO;
 import com.niveshcore360.entity.AssetType;
-import com.niveshcore360.entity.MutualFund;
-import com.niveshcore360.entity.Stock;
 import java.util.List;
 
 /**
@@ -17,9 +15,8 @@ public interface InvestmentService {
     List<InvestmentDTO> searchInvestments(Long portfolioId, String keyword);
     List<InvestmentDTO> filterInvestments(Long portfolioId, AssetType assetType);
 
-    // Metadata management for Stocks and Mutual Funds
-    List<Stock> getAllStocks();
-    List<MutualFund> getAllMutualFunds();
-    Stock createStock(Stock stock);
-    MutualFund createMutualFund(MutualFund mf);
+    // Metadata management for Unified Assets
+    List<com.niveshcore360.entity.Asset> getAllStocks();
+    List<com.niveshcore360.entity.Asset> getAllMutualFunds();
+    com.niveshcore360.entity.Asset createAsset(com.niveshcore360.entity.Asset asset);
 }

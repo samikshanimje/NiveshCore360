@@ -19,12 +19,13 @@ public class AppMapper {
      */
     public static UserDTO toUserDTO(User user) {
         if (user == null) return null;
+        String roleStr = user.getRoles() == null || user.getRoles().isEmpty() ? "ROLE_USER" : user.getRoles().iterator().next().getName();
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
-                .role(user.getRole())
+                .role(roleStr)
                 .build();
     }
 
@@ -39,7 +40,6 @@ public class AppMapper {
                 .email(dto.getEmail())
                 .fullName(dto.getFullName())
                 .password(dto.getPassword())
-                .role(dto.getRole())
                 .build();
     }
 
@@ -53,16 +53,11 @@ public class AppMapper {
         String name = "";
         Long assetId = null;
 
-        if (inv.getAssetType() == AssetType.STOCK && inv.getStock() != null) {
-            currentPrice = inv.getStock().getCurrentPrice();
-            symbol = inv.getStock().getTicker();
-            name = inv.getStock().getCompanyName();
-            assetId = inv.getStock().getId();
-        } else if (inv.getAssetType() == AssetType.MUTUAL_FUND && inv.getMutualFund() != null) {
-            currentPrice = inv.getMutualFund().getNav();
-            symbol = inv.getMutualFund().getFundName();
-            name = inv.getMutualFund().getFundName();
-            assetId = inv.getMutualFund().getId();
+        if (inv.getAsset() != null) {
+            currentPrice = inv.getAsset().getCurrentPrice();
+            symbol = inv.getAsset().getSymbol();
+            name = inv.getAsset().getName();
+            assetId = inv.getAsset().getId();
         }
 
         BigDecimal qty = inv.getQuantity();

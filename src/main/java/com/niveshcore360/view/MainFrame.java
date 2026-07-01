@@ -13,6 +13,7 @@ import com.niveshcore360.view.goal.GoalView;
 import com.niveshcore360.view.login.LoginView;
 import com.niveshcore360.view.portfolio.PortfolioView;
 import com.niveshcore360.view.report.ReportView;
+import com.niveshcore360.view.chatbot.ChatbotView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
     private final CalculatorsView calculatorsView;
     private final ReportView reportView;
     private final AdminView adminView;
+    private final ChatbotView chatbotView;
 
     private CardLayout topCardLayout;
     private JPanel topContainer;
@@ -53,7 +55,8 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
                      GoalView goalView,
                      CalculatorsView calculatorsView,
                      ReportView reportView,
-                     AdminView adminView) {
+                     AdminView adminView,
+                     ChatbotView chatbotView) {
         this.userSession = userSession;
         this.loginView = loginView;
         this.dashboardView = dashboardView;
@@ -62,6 +65,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         this.calculatorsView = calculatorsView;
         this.reportView = reportView;
         this.adminView = adminView;
+        this.chatbotView = chatbotView;
     }
 
     @PostConstruct
@@ -107,6 +111,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         JButton btnGoal = createNavButton("Milestones");
         JButton btnCalc = createNavButton("Calculators");
         JButton btnRep = createNavButton("Statements");
+        JButton btnChat = createNavButton("AI Advisor");
         btnAdminNav = createNavButton("Admin Panel");
         btnAdminNav.setVisible(false); // Hidden by default, toggled upon user role on login
 
@@ -130,7 +135,8 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         gbc.gridy = 3; sidebar.add(btnGoal, gbc);
         gbc.gridy = 4; sidebar.add(btnCalc, gbc);
         gbc.gridy = 5; sidebar.add(btnRep, gbc);
-        gbc.gridy = 6; sidebar.add(btnAdminNav, gbc);
+        gbc.gridy = 6; sidebar.add(btnChat, gbc);
+        gbc.gridy = 7; sidebar.add(btnAdminNav, gbc);
 
         // Sidebar Bottom utility items
         gbc.gridy = 7;
@@ -164,6 +170,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         workspaceContainer.add(goalView, "GOALS");
         workspaceContainer.add(calculatorsView, "CALCS");
         workspaceContainer.add(reportView, "REPORTS");
+        workspaceContainer.add(chatbotView, "CHATBOT");
         workspaceContainer.add(adminView, "ADMIN");
 
         shell.add(workspaceContainer, BorderLayout.CENTER);
@@ -174,6 +181,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         btnGoal.addActionListener(e -> showWorkspaceCard("GOALS"));
         btnCalc.addActionListener(e -> showWorkspaceCard("CALCS"));
         btnRep.addActionListener(e -> showWorkspaceCard("REPORTS"));
+        btnChat.addActionListener(e -> showWorkspaceCard("CHATBOT"));
         btnAdminNav.addActionListener(e -> showWorkspaceCard("ADMIN"));
 
         btnTheme.addActionListener(e -> {
@@ -207,6 +215,8 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
             goalView.setupGoalViewData();
         } else if ("REPORTS".equals(name)) {
             reportView.setupReportViewData();
+        } else if ("CHATBOT".equals(name)) {
+            chatbotView.loadHistory();
         } else if ("ADMIN".equals(name)) {
             adminView.reloadAdminDiagnostics();
         }
@@ -217,7 +227,9 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         if (user != null) {
             // Authenticated: Initialize badges and admin views
             lblUserBadge.setText(user.getFullName() != null ? user.getFullName() + " (" + user.getUsername() + ")" : user.getUsername());
-            btnAdminNav.setVisible(user.getRole() == Role.ADMIN);
+            
+            boolean isAdmin = user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equalsIgnoreCase(r.getName()));
+            btnAdminNav.setVisible(isAdmin);
 
             topCardLayout.show(topContainer, "WORKSPACE");
             showWorkspaceCard("DASHBOARD");

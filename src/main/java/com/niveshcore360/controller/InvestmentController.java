@@ -2,8 +2,7 @@ package com.niveshcore360.controller;
 
 import com.niveshcore360.dto.InvestmentDTO;
 import com.niveshcore360.entity.AssetType;
-import com.niveshcore360.entity.MutualFund;
-import com.niveshcore360.entity.Stock;
+import com.niveshcore360.entity.Asset;
 import com.niveshcore360.service.InvestmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -61,11 +60,11 @@ public class InvestmentController {
         return investmentService.filterInvestments(portfolioId, type);
     }
 
-    public List<Stock> getAvailableStocks() {
+    public List<Asset> getAvailableStocks() {
         return investmentService.getAllStocks();
     }
 
-    public List<MutualFund> getAvailableMutualFunds() {
+    public List<Asset> getAvailableMutualFunds() {
         return investmentService.getAllMutualFunds();
     }
 }

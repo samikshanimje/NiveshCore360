@@ -35,10 +35,12 @@ public class LoginView extends JPanel {
         JPanel loginCard = createLoginCard();
         JPanel registerCard = createRegisterCard();
         JPanel forgotCard = createForgotCard();
+        JPanel onboardingCard = createOnboardingCard();
 
         containerPanel.add(loginCard, "LOGIN");
         containerPanel.add(registerCard, "REGISTER");
         containerPanel.add(forgotCard, "FORGOT");
+        containerPanel.add(onboardingCard, "ONBOARDING");
 
         add(containerPanel);
         showCard("LOGIN");
@@ -238,9 +240,9 @@ public class LoginView extends JPanel {
             }
             try {
                 authController.register(user, email, name, pass);
-                JOptionPane.showMessageDialog(this, "Registration successful! Please login.");
+                JOptionPane.showMessageDialog(this, "Registration successful! Let's show you around.");
                 lblError.setText("");
-                showCard("LOGIN");
+                showCard("ONBOARDING");
             } catch (Exception ex) {
                 lblError.setText(ex.getMessage());
             }
@@ -320,5 +322,120 @@ public class LoginView extends JPanel {
         });
 
         return card;
+    }
+
+    private JPanel createOnboardingCard() {
+        CardPanel card = new CardPanel(new BorderLayout());
+        card.setPreferredSize(new Dimension(420, 480));
+        card.setBorder(new EmptyBorder(25, 25, 25, 25));
+
+        CardLayout onboardingLayout = new CardLayout();
+        JPanel pagesPanel = new JPanel(onboardingLayout);
+        pagesPanel.setOpaque(false);
+
+        // Slide 1: AI Advisor
+        JPanel page1 = createOnboardingPage(
+            "AI Wealth Advisor",
+            "Personalized wealth strategies and portfolio allocations powered by OpenAI models. Get answers to complex tax questions, asset selections, and SIP plans tailored to your risk appetite.",
+            new com.niveshcore360.components.LogoPainter(80)
+        );
+
+        // Slide 2: Analytics
+        JPanel page2 = createOnboardingPage(
+            "Portfolio Analytics",
+            "Evaluate systematically risk-adjusted performances. Access Sharpe Ratios, Betas, Alphas, and sector concentrations displayed in premium dark-themed charts.",
+            new com.niveshcore360.components.LogoPainter(80)
+        );
+
+        // Slide 3: Goals
+        JPanel page3 = createOnboardingPage(
+            "Milestones Planner",
+            "Set targets for Retirement, Education, or Custom dreams. Predict success probabilities and track compound progress using the Newton-Raphson math model.",
+            new com.niveshcore360.components.LogoPainter(80)
+        );
+
+        pagesPanel.add(page1, "PAGE1");
+        pagesPanel.add(page2, "PAGE2");
+        pagesPanel.add(page3, "PAGE3");
+
+        card.add(pagesPanel, BorderLayout.CENTER);
+
+        // Navigation Footer
+        JPanel navPanel = new JPanel(new BorderLayout());
+        navPanel.setOpaque(false);
+        navPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
+
+        JButton btnSkip = new JButton("Skip");
+        btnSkip.setContentAreaFilled(false);
+        btnSkip.setBorderPainted(false);
+        btnSkip.setForeground(UIConstants.DARK_TEXT_MUTED);
+        btnSkip.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        navPanel.add(btnSkip, BorderLayout.WEST);
+
+        RoundedButton btnNext = new RoundedButton("Next Step");
+        btnNext.setPreferredSize(new Dimension(140, 36));
+        navPanel.add(btnNext, BorderLayout.EAST);
+
+        card.add(navPanel, BorderLayout.SOUTH);
+
+        // Slide logic
+        final int[] currentPage = {1};
+        btnNext.addActionListener(e -> {
+            if (currentPage[0] == 1) {
+                onboardingLayout.show(pagesPanel, "PAGE2");
+                currentPage[0] = 2;
+            } else if (currentPage[0] == 2) {
+                onboardingLayout.show(pagesPanel, "PAGE3");
+                btnNext.setText("Get Started");
+                currentPage[0] = 3;
+            } else {
+                // Reset onboarding state
+                onboardingLayout.show(pagesPanel, "PAGE1");
+                btnNext.setText("Next Step");
+                currentPage[0] = 1;
+                showCard("LOGIN");
+            }
+        });
+
+        btnSkip.addActionListener(e -> {
+            onboardingLayout.show(pagesPanel, "PAGE1");
+            btnNext.setText("Next Step");
+            currentPage[0] = 1;
+            showCard("LOGIN");
+        });
+
+        return card;
+    }
+
+    private JPanel createOnboardingPage(String titleText, String descText, JComponent visualComponent) {
+        JPanel page = new JPanel();
+        page.setLayout(new BoxLayout(page, BoxLayout.Y_AXIS));
+        page.setOpaque(false);
+
+        page.add(Box.createRigidArea(new Dimension(0, 15)));
+        visualComponent.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        page.add(visualComponent);
+        page.add(Box.createRigidArea(new Dimension(0, 25)));
+
+        JLabel title = new JLabel(titleText, JLabel.CENTER);
+        title.setFont(new Font("sansserif", Font.BOLD, 20));
+        title.setForeground(UIConstants.DARK_TEXT_PRIMARY);
+        title.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        page.add(title);
+        page.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        JTextArea desc = new JTextArea(descText);
+        desc.setFont(UIConstants.FONT_SUBTITLE);
+        desc.setForeground(UIConstants.DARK_TEXT_MUTED);
+        desc.setLineWrap(true);
+        desc.setWrapStyleWord(true);
+        desc.setEditable(false);
+        desc.setOpaque(false);
+        desc.setFocusable(false);
+        desc.setMaximumSize(new Dimension(340, 120));
+        desc.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        page.add(desc);
+
+        return page;
     }
 }

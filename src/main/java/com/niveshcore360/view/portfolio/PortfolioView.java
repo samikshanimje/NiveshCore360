@@ -8,9 +8,8 @@ import com.niveshcore360.controller.InvestmentController;
 import com.niveshcore360.controller.PortfolioController;
 import com.niveshcore360.dto.InvestmentDTO;
 import com.niveshcore360.entity.AssetType;
-import com.niveshcore360.entity.MutualFund;
+import com.niveshcore360.entity.Asset;
 import com.niveshcore360.entity.Portfolio;
-import com.niveshcore360.entity.Stock;
 import com.niveshcore360.security.UserSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -259,14 +258,14 @@ public class PortfolioView extends JPanel {
         comboType.addActionListener(e -> {
             comboAssetList.removeAllItems();
             if (comboType.getSelectedItem() == AssetType.STOCK) {
-                List<Stock> stocks = investmentController.getAvailableStocks();
-                for (Stock s : stocks) {
-                    comboAssetList.addItem(new AssetListItem(s.getId(), s.getTicker() + " - " + s.getCompanyName()));
+                List<Asset> stocks = investmentController.getAvailableStocks();
+                for (Asset s : stocks) {
+                    comboAssetList.addItem(new AssetListItem(s.getId(), s.getSymbol() + " - " + s.getName()));
                 }
-            } else {
-                List<MutualFund> funds = investmentController.getAvailableMutualFunds();
-                for (MutualFund mf : funds) {
-                    comboAssetList.addItem(new AssetListItem(mf.getId(), mf.getFundName()));
+            } else if (comboType.getSelectedItem() == AssetType.MUTUAL_FUND) {
+                List<Asset> funds = investmentController.getAvailableMutualFunds();
+                for (Asset mf : funds) {
+                    comboAssetList.addItem(new AssetListItem(mf.getId(), mf.getName()));
                 }
             }
         });

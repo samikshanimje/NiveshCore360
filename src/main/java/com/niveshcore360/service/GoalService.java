@@ -13,4 +13,5 @@ public interface GoalService {
     void deleteGoal(Long goalId);
     List<GoalDTO> getGoalsByPortfolioId(Long portfolioId);
     void updateGoalProgress(Long goalId, BigDecimal newCurrentAmount);
+    String getGoalForecastMessage(Long goalId);
 }

@@ -136,4 +136,50 @@ public class GoalServiceImpl implements GoalService {
                 .build();
         notificationRepository.save(notification);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getGoalForecastMessage(Long goalId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found with id: " + goalId));
+
+        if (goal.getStatus() == GoalStatus.COMPLETED) {
+            return "Milestone achieved! You have successfully funded this goal.";
+        }
+
+        java.time.LocalDate now = java.time.LocalDate.now();
+        if (goal.getTargetDate().isBefore(now)) {
+            return "Goal target date has passed. Focus on re-aligning your target timelines.";
+        }
+
+        long months = java.time.temporal.ChronoUnit.MONTHS.between(now, goal.getTargetDate());
+        if (months <= 0) {
+            months = 1;
+        }
+
+        BigDecimal gap = goal.getTargetAmount().subtract(goal.getCurrentAmount());
+        if (gap.compareTo(BigDecimal.ZERO) <= 0) {
+            return "Your current funds cover this goal. Mark it completed!";
+        }
+
+        // Project current funds growth at a conservative 8% annual return (0.66% monthly)
+        double rate = 0.08 / 12.0;
+        double growthFactor = Math.pow(1.0 + rate, months);
+        BigDecimal projectedCurrentValue = goal.getCurrentAmount().multiply(BigDecimal.valueOf(growthFactor));
+        
+        BigDecimal remainingGap = goal.getTargetAmount().subtract(projectedCurrentValue);
+        if (remainingGap.compareTo(BigDecimal.ZERO) <= 0) {
+            return String.format("On Track! Compounded growth at 8%% projection will grow your holdings to exceed the target amount in %d months.", months);
+        }
+
+        // Calculate the monthly contribution needed to bridge the remaining gap
+        double monthlyRate = 0.08 / 12.0;
+        double futureValueFactor = ((Math.pow(1.0 + monthlyRate, months) - 1.0) / monthlyRate) * (1.0 + monthlyRate);
+        double monthlyContribution = remainingGap.doubleValue() / futureValueFactor;
+
+        return String.format(
+            "Underfunded. To hit your target in %d months, you need to set up a monthly SIP of ₹%,.2f (assuming 8%% returns). Current Gap: ₹%,.2f",
+            months, monthlyContribution, remainingGap
+        );
+    }
 }
