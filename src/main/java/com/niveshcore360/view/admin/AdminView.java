@@ -1,6 +1,7 @@
 package com.niveshcore360.view.admin;
 
 import com.niveshcore360.components.CardPanel;
+import com.niveshcore360.components.RoundedButton;
 import com.niveshcore360.components.ThemeManager;
 import com.niveshcore360.constants.UIConstants;
 import com.niveshcore360.entity.AuditLog;
@@ -14,12 +15,13 @@ import org.springframework.stereotype.Component;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Admin View displaying user profiles lists and system diagnostic audit logs.
+ * Admin View with premium metric cards and warm-themed data tables.
  */
 @Component
 public class AdminView extends JPanel {
@@ -47,8 +49,8 @@ public class AdminView extends JPanel {
         this.portfolioRepository = portfolioRepository;
         this.auditLogService = auditLogService;
 
-        setLayout(new BorderLayout(16, 16));
-        setBorder(new EmptyBorder(16, 16, 16, 16));
+        setLayout(new BorderLayout(UIConstants.SPACE_MD, UIConstants.SPACE_MD));
+        setBorder(new EmptyBorder(UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG));
         setOpaque(false);
 
         // Header
@@ -56,12 +58,11 @@ public class AdminView extends JPanel {
         headerPanel.setOpaque(false);
 
         JLabel lblTitle = new JLabel("System Administrator Panel");
-        lblTitle.setFont(UIConstants.FONT_TITLE);
-        lblTitle.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+        lblTitle.setFont(UIConstants.FONT_DISPLAY);
         headerPanel.add(lblTitle, BorderLayout.WEST);
 
-        JButton btnRefresh = new JButton("Refresh Diagnostics");
-        btnRefresh.setPreferredSize(new Dimension(160, 36));
+        RoundedButton btnRefresh = RoundedButton.secondary("Refresh Diagnostics");
+        btnRefresh.setPreferredSize(new Dimension(180, 38));
         btnRefresh.addActionListener(e -> reloadAdminDiagnostics());
         headerPanel.add(btnRefresh, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
@@ -73,65 +74,40 @@ public class AdminView extends JPanel {
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.BOTH;
 
-        // Metric Counts
+        // ─── Metric Cards ───────────────────────────────────────────
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.15;
-        CardPanel cardUsers = new CardPanel(new BorderLayout());
-        lblTotalUsers = new JLabel("0", JLabel.CENTER);
-        lblTotalUsers.setFont(new Font("sansserif", Font.BOLD, 24));
-        JLabel titleUsers = new JLabel("System Profiles", JLabel.CENTER);
-        titleUsers.setFont(UIConstants.FONT_SUBTITLE);
-        titleUsers.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardUsers.add(titleUsers, BorderLayout.NORTH);
-        cardUsers.add(lblTotalUsers, BorderLayout.CENTER);
-        centerGrid.add(cardUsers, gbc);
+        centerGrid.add(createMetricCard("System Profiles", lblTotalUsers = createMetricValue()), gbc);
 
         gbc.gridx = 1;
-        CardPanel cardPortfolios = new CardPanel(new BorderLayout());
-        lblTotalPortfolios = new JLabel("0", JLabel.CENTER);
-        lblTotalPortfolios.setFont(new Font("sansserif", Font.BOLD, 24));
-        JLabel titlePorts = new JLabel("Active Portfolios", JLabel.CENTER);
-        titlePorts.setFont(UIConstants.FONT_SUBTITLE);
-        titlePorts.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardPortfolios.add(titlePorts, BorderLayout.NORTH);
-        cardPortfolios.add(lblTotalPortfolios, BorderLayout.CENTER);
-        centerGrid.add(cardPortfolios, gbc);
+        centerGrid.add(createMetricCard("Active Portfolios", lblTotalPortfolios = createMetricValue()), gbc);
 
         gbc.gridx = 2;
-        CardPanel cardLogs = new CardPanel(new BorderLayout());
-        lblTotalLogs = new JLabel("0", JLabel.CENTER);
-        lblTotalLogs.setFont(new Font("sansserif", Font.BOLD, 24));
-        JLabel titleLogs = new JLabel("Audit Logs Tracked", JLabel.CENTER);
-        titleLogs.setFont(UIConstants.FONT_SUBTITLE);
-        titleLogs.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardLogs.add(titleLogs, BorderLayout.NORTH);
-        cardLogs.add(lblTotalLogs, BorderLayout.CENTER);
-        centerGrid.add(cardLogs, gbc);
+        centerGrid.add(createMetricCard("Audit Logs", lblTotalLogs = createMetricValue()), gbc);
 
-        // Tabbed Panel for User List and Audit Logs
+        // ─── Tabbed Data Tables ─────────────────────────────────────
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3; gbc.weighty = 0.85;
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(UIConstants.FONT_BODY);
 
-        // 1. Users Tab
+        // Users tab
         JPanel usersPanel = new JPanel(new BorderLayout());
         usersPanel.setOpaque(false);
         modelUsers = new DefaultTableModel(new Object[]{"ID", "Username", "Email", "Full Name", "Role"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        tblUsers = new JTable(modelUsers);
-        tblUsers.setRowHeight(26);
+        tblUsers = createStyledTable(modelUsers);
         usersPanel.add(new JScrollPane(tblUsers), BorderLayout.CENTER);
         tabbedPane.addTab("User Directory", usersPanel);
 
-        // 2. Logs Tab
+        // Logs tab
         JPanel logsPanel = new JPanel(new BorderLayout());
         logsPanel.setOpaque(false);
         modelLogs = new DefaultTableModel(new Object[]{"Log ID", "Auditor", "Action Executed", "Event Details", "Timestamp"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        tblLogs = new JTable(modelLogs);
-        tblLogs.setRowHeight(26);
+        tblLogs = createStyledTable(modelLogs);
         logsPanel.add(new JScrollPane(tblLogs), BorderLayout.CENTER);
         tabbedPane.addTab("Audit Logs Ledger", logsPanel);
 
@@ -139,9 +115,57 @@ public class AdminView extends JPanel {
         add(centerGrid, BorderLayout.CENTER);
     }
 
+    private CardPanel createMetricCard(String title, JLabel valueLabel) {
+        CardPanel card = new CardPanel(new BorderLayout(4, 8), UIConstants.SPACE_LG);
+
+        JLabel titleLbl = new JLabel(title, JLabel.CENTER);
+        titleLbl.setFont(UIConstants.FONT_CAPTION);
+        titleLbl.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+        card.add(titleLbl, BorderLayout.NORTH);
+
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JLabel createMetricValue() {
+        JLabel lbl = new JLabel("0", JLabel.CENTER);
+        lbl.setFont(UIConstants.FONT_MONO);
+        lbl.setForeground(UIConstants.GOLD_ACCENT);
+        return lbl;
+    }
+
+    private JTable createStyledTable(DefaultTableModel model) {
+        JTable table = new JTable(model);
+        table.setRowHeight(32);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setFont(UIConstants.FONT_BODY);
+        table.getTableHeader().setFont(UIConstants.FONT_BUTTON);
+        table.getTableHeader().setPreferredSize(new Dimension(0, 40));
+
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(JTable tbl, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                if (isSelected) {
+                    setBackground(UIConstants.GOLD_SUBTLE);
+                } else if (row % 2 == 0) {
+                    setBackground(ThemeManager.isDarkMode() ? UIConstants.DARK_CARD : UIConstants.LIGHT_CARD);
+                } else {
+                    setBackground(ThemeManager.isDarkMode() ? UIConstants.DARK_BG : UIConstants.LIGHT_BG);
+                }
+                setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+                return this;
+            }
+        });
+
+        return table;
+    }
+
     public void reloadAdminDiagnostics() {
         try {
-            // Stats
             long userCount = userRepository.count();
             long portCount = portfolioRepository.count();
             List<AuditLog> logs = auditLogService.getLogs();
@@ -150,7 +174,6 @@ public class AdminView extends JPanel {
             lblTotalPortfolios.setText(String.valueOf(portCount));
             lblTotalLogs.setText(String.valueOf(logs.size()));
 
-            // User directory grid
             modelUsers.setRowCount(0);
             List<User> users = userRepository.findAll();
             for (User u : users) {
@@ -163,7 +186,6 @@ public class AdminView extends JPanel {
                 });
             }
 
-            // Audit logs grid
             modelLogs.setRowCount(0);
             for (AuditLog log : logs) {
                 modelLogs.addRow(new Object[]{

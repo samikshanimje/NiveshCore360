@@ -22,12 +22,14 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Dashboard View consolidating portfolio summaries, allocations, charts, and notification logs.
+ * Dashboard View with time-of-day greeting, premium stat cards,
+ * themed pie chart, and notification alerts.
  */
 @Component
 public class DashboardView extends JPanel {
@@ -36,6 +38,7 @@ public class DashboardView extends JPanel {
     private final NotificationService notificationService;
     private final UserSession userSession;
 
+    private JLabel lblGreeting;
     private JLabel lblTotalValue;
     private JLabel lblTotalInvested;
     private JLabel lblProfitLoss;
@@ -53,18 +56,30 @@ public class DashboardView extends JPanel {
         this.notificationService = notificationService;
         this.userSession = userSession;
 
-        setLayout(new BorderLayout(16, 16));
-        setBorder(new EmptyBorder(16, 16, 16, 16));
+        setLayout(new BorderLayout(UIConstants.SPACE_MD, UIConstants.SPACE_MD));
+        setBorder(new EmptyBorder(UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG));
         setOpaque(false);
 
-        // Header with portfolio selection
-        JPanel headerPanel = new JPanel(new BorderLayout(10, 10));
+        // ─── Header with greeting + portfolio selector ──────────────
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
         headerPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Performance Dashboard");
-        lblTitle.setFont(UIConstants.FONT_TITLE);
-        lblTitle.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
-        headerPanel.add(lblTitle, BorderLayout.WEST);
+        JPanel greetingPanel = new JPanel();
+        greetingPanel.setLayout(new BoxLayout(greetingPanel, BoxLayout.Y_AXIS));
+        greetingPanel.setOpaque(false);
+
+        lblGreeting = new JLabel(getGreetingText());
+        lblGreeting.setFont(UIConstants.FONT_DISPLAY);
+        lblGreeting.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        greetingPanel.add(lblGreeting);
+
+        JLabel lblSub = new JLabel("Here's your portfolio overview");
+        lblSub.setFont(UIConstants.FONT_CAPTION);
+        lblSub.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+        lblSub.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        greetingPanel.add(lblSub);
+
+        headerPanel.add(greetingPanel, BorderLayout.WEST);
 
         comboPortfolios = new JComboBox<>();
         comboPortfolios.setPreferredSize(new Dimension(200, 36));
@@ -72,52 +87,34 @@ public class DashboardView extends JPanel {
         headerPanel.add(comboPortfolios, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // Main dashboard Grid
+        // ─── Main Grid ──────────────────────────────────────────────
         JPanel mainGrid = new JPanel(new GridBagLayout());
         mainGrid.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.insets = new Insets(UIConstants.SPACE_SM, UIConstants.SPACE_SM, UIConstants.SPACE_SM, UIConstants.SPACE_SM);
         gbc.fill = GridBagConstraints.BOTH;
 
-        // Metric cards
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.2;
-        CardPanel cardValue = new CardPanel(new BorderLayout(6, 6));
-        lblTotalValue = new JLabel("₹0.00", JLabel.CENTER);
-        lblTotalValue.setFont(new Font("sansserif", Font.BOLD, 26));
-        JLabel valTitle = new JLabel("Portfolio Value", JLabel.CENTER);
-        valTitle.setFont(UIConstants.FONT_SUBTITLE);
-        valTitle.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardValue.add(valTitle, BorderLayout.NORTH);
-        cardValue.add(lblTotalValue, BorderLayout.CENTER);
+        // ─── Stat Cards Row ─────────────────────────────────────────
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.18;
+        CardPanel cardValue = createStatCard("Portfolio Value");
+        lblTotalValue = (JLabel) ((JPanel) cardValue.getComponent(1)).getComponent(0);
         mainGrid.add(cardValue, gbc);
 
         gbc.gridx = 1;
-        CardPanel cardInvested = new CardPanel(new BorderLayout(6, 6));
-        lblTotalInvested = new JLabel("₹0.00", JLabel.CENTER);
-        lblTotalInvested.setFont(new Font("sansserif", Font.BOLD, 26));
-        JLabel invTitle = new JLabel("Invested Capital", JLabel.CENTER);
-        invTitle.setFont(UIConstants.FONT_SUBTITLE);
-        invTitle.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardInvested.add(invTitle, BorderLayout.NORTH);
-        cardInvested.add(lblTotalInvested, BorderLayout.CENTER);
+        CardPanel cardInvested = createStatCard("Invested Capital");
+        lblTotalInvested = (JLabel) ((JPanel) cardInvested.getComponent(1)).getComponent(0);
         mainGrid.add(cardInvested, gbc);
 
         gbc.gridx = 2;
-        CardPanel cardProfit = new CardPanel(new BorderLayout(6, 6));
-        lblProfitLoss = new JLabel("₹0.00 (0.00%)", JLabel.CENTER);
-        lblProfitLoss.setFont(new Font("sansserif", Font.BOLD, 22));
-        JLabel profitTitle = new JLabel("Profit / Loss", JLabel.CENTER);
-        profitTitle.setFont(UIConstants.FONT_SUBTITLE);
-        profitTitle.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        cardProfit.add(profitTitle, BorderLayout.NORTH);
-        cardProfit.add(lblProfitLoss, BorderLayout.CENTER);
+        CardPanel cardProfit = createStatCard("Total Returns");
+        lblProfitLoss = (JLabel) ((JPanel) cardProfit.getComponent(1)).getComponent(0);
         mainGrid.add(cardProfit, gbc);
 
-        // Chart section (left side bottom)
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2; gbc.weighty = 0.8;
-        CardPanel chartCard = new CardPanel(new BorderLayout());
-        JLabel chartTitle = new JLabel("Asset Allocation Breakdown", JLabel.LEFT);
-        chartTitle.setFont(UIConstants.FONT_HEADER);
+        // ─── Chart section ──────────────────────────────────────────
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2; gbc.weighty = 0.82;
+        CardPanel chartCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_LG);
+        JLabel chartTitle = new JLabel("Asset Allocation Breakdown");
+        chartTitle.setFont(UIConstants.FONT_SUBHEADING);
         chartCard.add(chartTitle, BorderLayout.NORTH);
 
         chartWrapperPanel = new JPanel(new BorderLayout());
@@ -125,11 +122,11 @@ public class DashboardView extends JPanel {
         chartCard.add(chartWrapperPanel, BorderLayout.CENTER);
         mainGrid.add(chartCard, gbc);
 
-        // Alerts logs section (right side bottom)
+        // ─── Alerts section ─────────────────────────────────────────
         gbc.gridx = 2; gbc.gridwidth = 1;
-        CardPanel alertsCard = new CardPanel(new BorderLayout());
-        JLabel alertTitle = new JLabel("Milestones & Alerts", JLabel.LEFT);
-        alertTitle.setFont(UIConstants.FONT_HEADER);
+        CardPanel alertsCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_LG);
+        JLabel alertTitle = new JLabel("Milestones & Alerts");
+        alertTitle.setFont(UIConstants.FONT_SUBHEADING);
         alertsCard.add(alertTitle, BorderLayout.NORTH);
 
         alertsListPanel = new JPanel();
@@ -145,11 +142,44 @@ public class DashboardView extends JPanel {
         add(mainGrid, BorderLayout.CENTER);
     }
 
+    private CardPanel createStatCard(String titleText) {
+        CardPanel card = new CardPanel(new BorderLayout(8, 8), UIConstants.SPACE_LG);
+
+        JLabel title = new JLabel(titleText);
+        title.setFont(UIConstants.FONT_CAPTION);
+        title.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+        card.add(title, BorderLayout.NORTH);
+
+        JPanel valuePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        valuePanel.setOpaque(false);
+        JLabel valueLbl = new JLabel("₹0.00");
+        valueLbl.setFont(UIConstants.FONT_MONO);
+        valuePanel.add(valueLbl);
+        card.add(valuePanel, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private String getGreetingText() {
+        int hour = LocalTime.now().getHour();
+        String greeting;
+        if (hour < 12) greeting = "Good Morning";
+        else if (hour < 17) greeting = "Good Afternoon";
+        else greeting = "Good Evening";
+
+        if (userSession.isLoggedIn() && userSession.getCurrentUser().getFullName() != null) {
+            String firstName = userSession.getCurrentUser().getFullName().split("\\s+")[0];
+            return greeting + ", " + firstName + " 👋";
+        }
+        return greeting + " 👋";
+    }
+
     /**
      * Rebuild and reload combobox selections when user logs in.
      */
     public void setupDashboardData() {
         if (!userSession.isLoggedIn()) return;
+        lblGreeting.setText(getGreetingText());
         comboPortfolios.removeAllItems();
         List<Portfolio> portfolios = portfolioController.getPortfolios();
         for (Portfolio p : portfolios) {
@@ -184,7 +214,7 @@ public class DashboardView extends JPanel {
 
             lblTotalValue.setText(currencyFormatter.format(summary.getTotalCurrentValue()));
             lblTotalInvested.setText(currencyFormatter.format(summary.getTotalInvestment()));
-            
+
             String profitStr = currencyFormatter.format(summary.getTotalProfitLoss()) + " (" + summary.getTotalProfitLossPercentage() + "%)";
             lblProfitLoss.setText(profitStr);
             if (summary.getTotalProfitLoss().compareTo(BigDecimal.ZERO) >= 0) {
@@ -198,13 +228,13 @@ public class DashboardView extends JPanel {
             if (summary.getCategoryAllocation().isEmpty()) {
                 JLabel emptyLbl = new JLabel("No investment holdings to display allocation.", JLabel.CENTER);
                 emptyLbl.setFont(UIConstants.FONT_BODY);
-                emptyLbl.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+                emptyLbl.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
                 chartWrapperPanel.add(emptyLbl, BorderLayout.CENTER);
             } else {
                 JFreeChart chart = createPieChart(summary.getCategoryAllocation());
                 ChartPanel chartPanel = new ChartPanel(chart);
                 chartPanel.setOpaque(false);
-                chartPanel.setBackground(new Color(0,0,0,0));
+                chartPanel.setBackground(new Color(0, 0, 0, 0));
                 chartWrapperPanel.add(chartPanel, BorderLayout.CENTER);
             }
             chartWrapperPanel.revalidate();
@@ -214,20 +244,22 @@ public class DashboardView extends JPanel {
             alertsListPanel.removeAll();
             List<Notification> alerts = notificationService.getNotificationsForUser(userSession.getCurrentUser().getId());
             if (alerts.isEmpty()) {
-                JLabel noAlerts = new JLabel("No milestone alerts recorded.");
+                JLabel noAlerts = new JLabel("All caught up! No new alerts.");
                 noAlerts.setFont(UIConstants.FONT_BODY);
-                noAlerts.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+                noAlerts.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+                noAlerts.setBorder(new EmptyBorder(20, 10, 10, 10));
                 alertsListPanel.add(noAlerts);
             } else {
                 for (Notification alert : alerts) {
-                    JPanel alertRow = new JPanel(new BorderLayout(5, 5));
+                    JPanel alertRow = new JPanel(new BorderLayout(8, 4));
                     alertRow.setOpaque(false);
-                    alertRow.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, 
-                        ThemeManager.isDarkMode() ? UIConstants.DARK_BORDER : UIConstants.LIGHT_BORDER));
-                    
-                    JLabel alertText = new JLabel("<html><body style='width: 200px;'>" + alert.getMessage() + "</body></html>");
-                    alertText.setFont(UIConstants.FONT_BODY);
-                    alertText.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+                    alertRow.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 3, 0, 0, UIConstants.GOLD_ACCENT),
+                        BorderFactory.createEmptyBorder(8, 10, 8, 6)
+                    ));
+
+                    JLabel alertText = new JLabel("<html><body style='width: 180px;'>" + alert.getMessage() + "</body></html>");
+                    alertText.setFont(UIConstants.FONT_CAPTION);
                     alertRow.add(alertText, BorderLayout.CENTER);
 
                     alertsListPanel.add(alertRow);
@@ -246,18 +278,20 @@ public class DashboardView extends JPanel {
         DefaultPieDataset dataset = new DefaultPieDataset();
         allocation.forEach((symbol, value) -> dataset.setValue(symbol, value.doubleValue()));
 
-        JFreeChart chart = ChartFactory.createPieChart(
-                "",
-                dataset,
-                true,
-                true,
-                false
-        );
+        JFreeChart chart = ChartFactory.createPieChart("", dataset, true, true, false);
 
         PiePlot plot = (PiePlot) chart.getPlot();
         plot.setBackgroundPaint(null);
         plot.setOutlineVisible(false);
         plot.setShadowPaint(null);
+
+        // Apply warm chart palette
+        Color[] palette = UIConstants.CHART_PALETTE;
+        int idx = 0;
+        for (Object key : dataset.getKeys()) {
+            plot.setSectionPaint((Comparable<?>) key, palette[idx % palette.length]);
+            idx++;
+        }
 
         boolean dark = ThemeManager.isDarkMode();
         Color textCol = dark ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY;
@@ -267,8 +301,10 @@ public class DashboardView extends JPanel {
         plot.setLabelPaint(textCol);
         plot.setLabelBackgroundPaint(bgCol);
         plot.setLabelOutlinePaint(bgCol);
+        plot.setLabelFont(UIConstants.FONT_CAPTION);
         chart.getLegend().setBackgroundPaint(bgCol);
         chart.getLegend().setItemPaint(textCol);
+        chart.getLegend().setItemFont(UIConstants.FONT_CAPTION);
 
         return chart;
     }

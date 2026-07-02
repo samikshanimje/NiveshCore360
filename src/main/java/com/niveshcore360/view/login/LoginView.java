@@ -2,6 +2,7 @@ package com.niveshcore360.view.login;
 
 import com.niveshcore360.controller.AuthController;
 import com.niveshcore360.components.CardPanel;
+import com.niveshcore360.components.LogoPainter;
 import com.niveshcore360.components.RoundedButton;
 import com.niveshcore360.constants.UIConstants;
 import com.niveshcore360.dto.UserDTO;
@@ -11,9 +12,11 @@ import org.springframework.stereotype.Component;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.Path2D;
 
 /**
- * Authentication view containing Login, Register, and Forgot Password card sub-panels.
+ * Authentication view with premium two-panel split layout.
+ * Left: Forest green branding panel. Right: Warm ivory auth card.
  */
 @Component
 public class LoginView extends JPanel {
@@ -27,8 +30,9 @@ public class LoginView extends JPanel {
         this.authController = authController;
         this.cardLayout = new CardLayout();
         this.containerPanel = new JPanel(cardLayout);
+        containerPanel.setOpaque(false);
 
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
         setOpaque(false);
 
         // Sub-panels
@@ -42,7 +46,7 @@ public class LoginView extends JPanel {
         containerPanel.add(forgotCard, "FORGOT");
         containerPanel.add(onboardingCard, "ONBOARDING");
 
-        add(containerPanel);
+        add(containerPanel, BorderLayout.CENTER);
         showCard("LOGIN");
     }
 
@@ -50,84 +54,194 @@ public class LoginView extends JPanel {
         cardLayout.show(containerPanel, name);
     }
 
+    // ─── LOGIN CARD (Two-Panel Split) ────────────────────────────────
     private JPanel createLoginCard() {
-        CardPanel card = new CardPanel(new GridBagLayout());
-        card.setPreferredSize(new Dimension(420, 480));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new java.awt.Insets(8, 8, 8, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel split = new JPanel(new GridLayout(1, 2));
+        split.setOpaque(false);
 
-        // Title
-        JLabel title = new JLabel("Welcome back to NiveshCore360", JLabel.CENTER);
-        title.setFont(UIConstants.FONT_TITLE);
-        title.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        card.add(title, gbc);
+        // LEFT: Branding panel
+        JPanel leftPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Forest green background
+                g2.setColor(UIConstants.FOREST_PRIMARY);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                // Decorative subtle growth lines
+                g2.setColor(UIConstants.FOREST_LIGHT);
+                g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                int w = getWidth(), h = getHeight();
+                Path2D line1 = new Path2D.Double();
+                line1.moveTo(w * 0.1, h * 0.85);
+                line1.lineTo(w * 0.3, h * 0.7);
+                line1.lineTo(w * 0.5, h * 0.75);
+                line1.lineTo(w * 0.7, h * 0.55);
+                line1.lineTo(w * 0.9, h * 0.4);
+                g2.draw(line1);
+                Path2D line2 = new Path2D.Double();
+                line2.moveTo(w * 0.1, h * 0.92);
+                line2.lineTo(w * 0.35, h * 0.8);
+                line2.lineTo(w * 0.55, h * 0.82);
+                line2.lineTo(w * 0.75, h * 0.65);
+                line2.lineTo(w * 0.9, h * 0.5);
+                g2.draw(line2);
+                g2.dispose();
+            }
+        };
+        leftPanel.setOpaque(false);
 
-        JLabel subtitle = new JLabel("Invest. Track. Grow. Securely.", JLabel.CENTER);
-        subtitle.setFont(UIConstants.FONT_SUBTITLE);
+        JPanel brandContent = new JPanel();
+        brandContent.setLayout(new BoxLayout(brandContent, BoxLayout.Y_AXIS));
+        brandContent.setOpaque(false);
+
+        LogoPainter logo = new LogoPainter(90);
+        logo.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        brandContent.add(logo);
+        brandContent.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        JLabel brandName = new JLabel("NiveshCore360");
+        brandName.setFont(UIConstants.FONT_DISPLAY);
+        brandName.setForeground(UIConstants.GOLD_ACCENT);
+        brandName.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        brandContent.add(brandName);
+        brandContent.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JLabel tagline = new JLabel("Your AI-powered wealth companion");
+        tagline.setFont(UIConstants.FONT_BODY);
+        tagline.setForeground(UIConstants.WARM_IVORY);
+        tagline.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        brandContent.add(tagline);
+        brandContent.add(Box.createRigidArea(new Dimension(0, 30)));
+
+        JLabel features = new JLabel("● AI Advisory    ● Risk Analytics    ● Goal Planner");
+        features.setFont(UIConstants.FONT_CAPTION);
+        features.setForeground(UIConstants.CHAMPAGNE);
+        features.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        brandContent.add(features);
+
+        leftPanel.add(brandContent);
+
+        // RIGHT: Login form
+        JPanel rightPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.WARM_IVORY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        rightPanel.setOpaque(false);
+
+        JPanel formWrapper = new JPanel();
+        formWrapper.setLayout(new BoxLayout(formWrapper, BoxLayout.Y_AXIS));
+        formWrapper.setOpaque(false);
+        formWrapper.setBorder(new EmptyBorder(0, 40, 0, 40));
+        formWrapper.setMaximumSize(new Dimension(380, 500));
+
+        JLabel title = new JLabel("Welcome Back");
+        title.setFont(UIConstants.FONT_DISPLAY);
+        title.setForeground(UIConstants.LIGHT_TEXT_PRIMARY);
+        title.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(title);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 6)));
+
+        JLabel subtitle = new JLabel("Invest smarter. Grow consistently.");
+        subtitle.setFont(UIConstants.FONT_CAPTION);
         subtitle.setForeground(UIConstants.LIGHT_TEXT_MUTED);
-        gbc.gridy = 1;
-        card.add(subtitle, gbc);
+        subtitle.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(subtitle);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 28)));
 
         // Username
-        gbc.gridwidth = 1; gbc.gridy = 2;
         JLabel lblUser = new JLabel("Username");
-        lblUser.setFont(UIConstants.FONT_HEADER);
-        card.add(lblUser, gbc);
+        lblUser.setFont(UIConstants.FONT_CAPTION);
+        lblUser.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        lblUser.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(lblUser);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 4)));
 
         JTextField txtUser = new JTextField();
-        txtUser.setPreferredSize(new Dimension(280, 36));
-        gbc.gridy = 3;
-        card.add(txtUser, gbc);
+        txtUser.setFont(UIConstants.FONT_BODY);
+        txtUser.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        txtUser.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(txtUser);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 16)));
 
         // Password
-        gbc.gridy = 4;
         JLabel lblPass = new JLabel("Password");
-        lblPass.setFont(UIConstants.FONT_HEADER);
-        card.add(lblPass, gbc);
+        lblPass.setFont(UIConstants.FONT_CAPTION);
+        lblPass.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        lblPass.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(lblPass);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 4)));
 
         JPasswordField txtPass = new JPasswordField();
-        txtPass.setPreferredSize(new Dimension(280, 36));
-        gbc.gridy = 5;
-        card.add(txtPass, gbc);
+        txtPass.setFont(UIConstants.FONT_BODY);
+        txtPass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        txtPass.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(txtPass);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Error message label
-        JLabel lblError = new JLabel("", JLabel.CENTER);
-        lblError.setForeground(UIConstants.LOSS_RED);
-        lblError.setFont(UIConstants.FONT_BODY);
-        gbc.gridy = 6; gbc.gridwidth = 2;
-        card.add(lblError, gbc);
+        // Remember me + Forgot
+        JPanel rememberRow = new JPanel(new BorderLayout());
+        rememberRow.setOpaque(false);
+        rememberRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        rememberRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
-        // Login Button
-        RoundedButton btnLogin = new RoundedButton("Login to Account");
-        btnLogin.setPreferredSize(new Dimension(280, 40));
-        gbc.gridy = 7; gbc.gridwidth = 2;
-        card.add(btnLogin, gbc);
-
-        // Switch panels links
-        JPanel linkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        linkPanel.setOpaque(false);
-        JButton btnGoRegister = new JButton("Register");
-        btnGoRegister.setBorderPainted(false);
-        btnGoRegister.setContentAreaFilled(false);
-        btnGoRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnGoRegister.setForeground(UIConstants.ACCENT_COLOR);
+        JCheckBox chkRemember = new JCheckBox("Remember me");
+        chkRemember.setFont(UIConstants.FONT_CAPTION);
+        chkRemember.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        chkRemember.setOpaque(false);
+        rememberRow.add(chkRemember, BorderLayout.WEST);
 
         JButton btnGoForgot = new JButton("Forgot Password?");
         btnGoForgot.setBorderPainted(false);
         btnGoForgot.setContentAreaFilled(false);
         btnGoForgot.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnGoForgot.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        btnGoForgot.setFont(UIConstants.FONT_CAPTION);
+        btnGoForgot.setForeground(UIConstants.GOLD_ACCENT);
+        rememberRow.add(btnGoForgot, BorderLayout.EAST);
 
-        linkPanel.add(btnGoForgot);
-        linkPanel.add(new JLabel("|"));
+        formWrapper.add(rememberRow);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Error label
+        JLabel lblError = new JLabel("", JLabel.CENTER);
+        lblError.setForeground(UIConstants.LOSS_RED);
+        lblError.setFont(UIConstants.FONT_CAPTION);
+        lblError.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(lblError);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        // Login button
+        RoundedButton btnLogin = new RoundedButton("Sign In");
+        btnLogin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        btnLogin.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formWrapper.add(btnLogin);
+        formWrapper.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Create account link
+        JPanel linkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+        linkPanel.setOpaque(false);
+        linkPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        JLabel linkText = new JLabel("Don't have an account?");
+        linkText.setFont(UIConstants.FONT_CAPTION);
+        linkText.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        JButton btnGoRegister = new JButton("Create Account");
+        btnGoRegister.setBorderPainted(false);
+        btnGoRegister.setContentAreaFilled(false);
+        btnGoRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnGoRegister.setFont(UIConstants.FONT_CAPTION);
+        btnGoRegister.setForeground(UIConstants.GOLD_ACCENT);
+        linkPanel.add(linkText);
         linkPanel.add(btnGoRegister);
+        formWrapper.add(linkPanel);
 
-        gbc.gridy = 8;
-        card.add(linkPanel, gbc);
+        rightPanel.add(formWrapper);
 
-        // Action Handlers
+        // Action Handlers (preserved exactly)
         btnGoRegister.addActionListener(e -> showCard("REGISTER"));
         btnGoForgot.addActionListener(e -> showCard("FORGOT"));
         btnLogin.addActionListener(e -> {
@@ -147,93 +261,92 @@ public class LoginView extends JPanel {
             }
         });
 
-        return card;
+        split.add(leftPanel);
+        split.add(rightPanel);
+        return split;
     }
 
+    // ─── REGISTER CARD ─────────────────────────────────────────────
     private JPanel createRegisterCard() {
-        CardPanel card = new CardPanel(new GridBagLayout());
-        card.setPreferredSize(new Dimension(420, 520));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new java.awt.Insets(6, 8, 6, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel split = new JPanel(new GridLayout(1, 2));
+        split.setOpaque(false);
 
-        JLabel title = new JLabel("Create Account", JLabel.CENTER);
-        title.setFont(UIConstants.FONT_TITLE);
-        title.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        card.add(title, gbc);
+        // Left branding (same as login)
+        JPanel leftPanel = createBrandingPanel();
+        split.add(leftPanel);
 
-        // Username
-        gbc.gridwidth = 1; gbc.gridy = 1;
-        JLabel lblUser = new JLabel("Username");
-        lblUser.setFont(UIConstants.FONT_HEADER);
-        card.add(lblUser, gbc);
+        // Right form
+        JPanel rightPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.WARM_IVORY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        rightPanel.setOpaque(false);
 
-        JTextField txtUser = new JTextField();
-        txtUser.setPreferredSize(new Dimension(280, 32));
-        gbc.gridy = 2;
-        card.add(txtUser, gbc);
+        JPanel form = new JPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setOpaque(false);
+        form.setBorder(new EmptyBorder(0, 40, 0, 40));
+        form.setMaximumSize(new Dimension(380, 600));
 
-        // Email
-        gbc.gridy = 3;
-        JLabel lblEmail = new JLabel("Email Address");
-        lblEmail.setFont(UIConstants.FONT_HEADER);
-        card.add(lblEmail, gbc);
+        JLabel title = new JLabel("Create Your Account");
+        title.setFont(UIConstants.FONT_HEADING);
+        title.setForeground(UIConstants.LIGHT_TEXT_PRIMARY);
+        title.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(title);
+        form.add(Box.createRigidArea(new Dimension(0, 24)));
 
-        JTextField txtEmail = new JTextField();
-        txtEmail.setPreferredSize(new Dimension(280, 32));
-        gbc.gridy = 4;
-        card.add(txtEmail, gbc);
-
-        // Full name
-        gbc.gridy = 5;
-        JLabel lblName = new JLabel("Full Name");
-        lblName.setFont(UIConstants.FONT_HEADER);
-        card.add(lblName, gbc);
-
-        JTextField txtName = new JTextField();
-        txtName.setPreferredSize(new Dimension(280, 32));
-        gbc.gridy = 6;
-        card.add(txtName, gbc);
-
-        // Password
-        gbc.gridy = 7;
-        JLabel lblPass = new JLabel("Password");
-        lblPass.setFont(UIConstants.FONT_HEADER);
-        card.add(lblPass, gbc);
-
+        JTextField txtUser = addFormField(form, "Username");
+        JTextField txtEmail = addFormField(form, "Email Address");
+        JTextField txtName = addFormField(form, "Full Name");
         JPasswordField txtPass = new JPasswordField();
-        txtPass.setPreferredSize(new Dimension(280, 32));
-        gbc.gridy = 8;
-        card.add(txtPass, gbc);
+        txtPass.setFont(UIConstants.FONT_BODY);
+        txtPass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        txtPass.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        JLabel passLabel = new JLabel("Password");
+        passLabel.setFont(UIConstants.FONT_CAPTION);
+        passLabel.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        passLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(passLabel);
+        form.add(Box.createRigidArea(new Dimension(0, 4)));
+        form.add(txtPass);
+        form.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        // Error message label
         JLabel lblError = new JLabel("", JLabel.CENTER);
         lblError.setForeground(UIConstants.LOSS_RED);
-        lblError.setFont(UIConstants.FONT_BODY);
-        gbc.gridy = 9; gbc.gridwidth = 2;
-        card.add(lblError, gbc);
+        lblError.setFont(UIConstants.FONT_CAPTION);
+        lblError.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(lblError);
+        form.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        RoundedButton btnRegister = new RoundedButton("Submit Registration");
-        btnRegister.setPreferredSize(new Dimension(280, 38));
-        gbc.gridy = 10;
-        card.add(btnRegister, gbc);
+        RoundedButton btnRegister = new RoundedButton("Create Account");
+        btnRegister.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        btnRegister.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(btnRegister);
+        form.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        JButton btnBack = new JButton("Back to Login");
+        JButton btnBack = new JButton("← Back to Sign In");
         btnBack.setBorderPainted(false);
         btnBack.setContentAreaFilled(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBack.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridy = 11;
-        card.add(btnBack, gbc);
+        btnBack.setFont(UIConstants.FONT_CAPTION);
+        btnBack.setForeground(UIConstants.GOLD_ACCENT);
+        btnBack.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(btnBack);
 
+        rightPanel.add(form);
+        split.add(rightPanel);
+
+        // Action handlers (preserved)
         btnBack.addActionListener(e -> showCard("LOGIN"));
         btnRegister.addActionListener(e -> {
             String user = txtUser.getText().trim();
             String email = txtEmail.getText().trim();
             String name = txtName.getText().trim();
             String pass = new String(txtPass.getPassword()).trim();
-
             if (user.isEmpty() || email.isEmpty() || name.isEmpty() || pass.isEmpty()) {
                 lblError.setText("Please fill out all fields.");
                 return;
@@ -248,61 +361,86 @@ public class LoginView extends JPanel {
             }
         });
 
-        return card;
+        return split;
     }
 
+    // ─── FORGOT CARD ───────────────────────────────────────────────
     private JPanel createForgotCard() {
-        CardPanel card = new CardPanel(new GridBagLayout());
-        card.setPreferredSize(new Dimension(420, 380));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new java.awt.Insets(8, 8, 8, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel split = new JPanel(new GridLayout(1, 2));
+        split.setOpaque(false);
 
-        JLabel title = new JLabel("Reset Password", JLabel.CENTER);
-        title.setFont(UIConstants.FONT_TITLE);
-        title.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        card.add(title, gbc);
+        split.add(createBrandingPanel());
 
-        gbc.gridwidth = 1; gbc.gridy = 1;
-        JLabel lblUser = new JLabel("Username");
-        lblUser.setFont(UIConstants.FONT_HEADER);
-        card.add(lblUser, gbc);
+        JPanel rightPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.WARM_IVORY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        rightPanel.setOpaque(false);
 
-        JTextField txtUser = new JTextField();
-        txtUser.setPreferredSize(new Dimension(280, 36));
-        gbc.gridy = 2;
-        card.add(txtUser, gbc);
+        JPanel form = new JPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setOpaque(false);
+        form.setBorder(new EmptyBorder(0, 40, 0, 40));
+        form.setMaximumSize(new Dimension(380, 500));
 
-        gbc.gridy = 3;
-        JLabel lblPass = new JLabel("New Password");
-        lblPass.setFont(UIConstants.FONT_HEADER);
-        card.add(lblPass, gbc);
+        JLabel title = new JLabel("Reset Password");
+        title.setFont(UIConstants.FONT_HEADING);
+        title.setForeground(UIConstants.LIGHT_TEXT_PRIMARY);
+        title.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(title);
+        form.add(Box.createRigidArea(new Dimension(0, 8)));
+        JLabel sub = new JLabel("Enter your username and new password.");
+        sub.setFont(UIConstants.FONT_CAPTION);
+        sub.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        sub.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(sub);
+        form.add(Box.createRigidArea(new Dimension(0, 24)));
+
+        JTextField txtUser = addFormField(form, "Username");
 
         JPasswordField txtPass = new JPasswordField();
-        txtPass.setPreferredSize(new Dimension(280, 36));
-        gbc.gridy = 4;
-        card.add(txtPass, gbc);
+        txtPass.setFont(UIConstants.FONT_BODY);
+        txtPass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        txtPass.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        JLabel passLbl = new JLabel("New Password");
+        passLbl.setFont(UIConstants.FONT_CAPTION);
+        passLbl.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        passLbl.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(passLbl);
+        form.add(Box.createRigidArea(new Dimension(0, 4)));
+        form.add(txtPass);
+        form.add(Box.createRigidArea(new Dimension(0, 16)));
 
         JLabel lblError = new JLabel("", JLabel.CENTER);
         lblError.setForeground(UIConstants.LOSS_RED);
-        lblError.setFont(UIConstants.FONT_BODY);
-        gbc.gridy = 5; gbc.gridwidth = 2;
-        card.add(lblError, gbc);
+        lblError.setFont(UIConstants.FONT_CAPTION);
+        lblError.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(lblError);
+        form.add(Box.createRigidArea(new Dimension(0, 8)));
 
         RoundedButton btnSubmit = new RoundedButton("Update Password");
-        btnSubmit.setPreferredSize(new Dimension(280, 40));
-        gbc.gridy = 6;
-        card.add(btnSubmit, gbc);
+        btnSubmit.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        btnSubmit.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(btnSubmit);
+        form.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        JButton btnBack = new JButton("Back to Login");
+        JButton btnBack = new JButton("← Back to Sign In");
         btnBack.setBorderPainted(false);
         btnBack.setContentAreaFilled(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBack.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridy = 7;
-        card.add(btnBack, gbc);
+        btnBack.setFont(UIConstants.FONT_CAPTION);
+        btnBack.setForeground(UIConstants.GOLD_ACCENT);
+        btnBack.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(btnBack);
 
+        rightPanel.add(form);
+        split.add(rightPanel);
+
+        // Action handlers (preserved)
         btnBack.addActionListener(e -> showCard("LOGIN"));
         btnSubmit.addActionListener(e -> {
             String user = txtUser.getText().trim();
@@ -321,46 +459,44 @@ public class LoginView extends JPanel {
             }
         });
 
-        return card;
+        return split;
     }
 
+    // ─── ONBOARDING CARD ───────────────────────────────────────────
     private JPanel createOnboardingCard() {
+        JPanel wrapper = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.FOREST_PRIMARY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        wrapper.setOpaque(false);
+
         CardPanel card = new CardPanel(new BorderLayout());
-        card.setPreferredSize(new Dimension(420, 480));
-        card.setBorder(new EmptyBorder(25, 25, 25, 25));
+        card.setPreferredSize(new Dimension(480, 420));
+        card.setBorder(new EmptyBorder(30, 30, 30, 30));
 
         CardLayout onboardingLayout = new CardLayout();
         JPanel pagesPanel = new JPanel(onboardingLayout);
         pagesPanel.setOpaque(false);
 
-        // Slide 1: AI Advisor
-        JPanel page1 = createOnboardingPage(
-            "AI Wealth Advisor",
-            "Personalized wealth strategies and portfolio allocations powered by OpenAI models. Get answers to complex tax questions, asset selections, and SIP plans tailored to your risk appetite.",
-            new com.niveshcore360.components.LogoPainter(80)
-        );
-
-        // Slide 2: Analytics
-        JPanel page2 = createOnboardingPage(
-            "Portfolio Analytics",
-            "Evaluate systematically risk-adjusted performances. Access Sharpe Ratios, Betas, Alphas, and sector concentrations displayed in premium dark-themed charts.",
-            new com.niveshcore360.components.LogoPainter(80)
-        );
-
-        // Slide 3: Goals
-        JPanel page3 = createOnboardingPage(
-            "Milestones Planner",
-            "Set targets for Retirement, Education, or Custom dreams. Predict success probabilities and track compound progress using the Newton-Raphson math model.",
-            new com.niveshcore360.components.LogoPainter(80)
-        );
+        JPanel page1 = createOnboardingPage("AI Wealth Advisor",
+                "Personalized wealth strategies and portfolio allocations powered by OpenAI. Get answers to complex tax questions, asset selections, and SIP plans.",
+                new LogoPainter(70));
+        JPanel page2 = createOnboardingPage("Portfolio Analytics",
+                "Evaluate risk-adjusted performances. Access Sharpe Ratios, Betas, Alphas, and sector concentrations displayed in premium dark-themed charts.",
+                new LogoPainter(70));
+        JPanel page3 = createOnboardingPage("Milestones Planner",
+                "Set targets for Retirement, Education, or Custom dreams. Predict success probabilities and track compound progress.",
+                new LogoPainter(70));
 
         pagesPanel.add(page1, "PAGE1");
         pagesPanel.add(page2, "PAGE2");
         pagesPanel.add(page3, "PAGE3");
-
         card.add(pagesPanel, BorderLayout.CENTER);
 
-        // Navigation Footer
         JPanel navPanel = new JPanel(new BorderLayout());
         navPanel.setOpaque(false);
         navPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
@@ -368,17 +504,19 @@ public class LoginView extends JPanel {
         JButton btnSkip = new JButton("Skip");
         btnSkip.setContentAreaFilled(false);
         btnSkip.setBorderPainted(false);
-        btnSkip.setForeground(UIConstants.DARK_TEXT_MUTED);
+        btnSkip.setForeground(UIConstants.LIGHT_TEXT_MUTED);
         btnSkip.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnSkip.setFont(UIConstants.FONT_CAPTION);
         navPanel.add(btnSkip, BorderLayout.WEST);
 
         RoundedButton btnNext = new RoundedButton("Next Step");
-        btnNext.setPreferredSize(new Dimension(140, 36));
+        btnNext.setPreferredSize(new Dimension(140, 38));
         navPanel.add(btnNext, BorderLayout.EAST);
 
         card.add(navPanel, BorderLayout.SOUTH);
+        wrapper.add(card);
 
-        // Slide logic
+        // Slide logic (preserved)
         final int[] currentPage = {1};
         btnNext.addActionListener(e -> {
             if (currentPage[0] == 1) {
@@ -389,7 +527,6 @@ public class LoginView extends JPanel {
                 btnNext.setText("Get Started");
                 currentPage[0] = 3;
             } else {
-                // Reset onboarding state
                 onboardingLayout.show(pagesPanel, "PAGE1");
                 btnNext.setText("Next Step");
                 currentPage[0] = 1;
@@ -404,35 +541,90 @@ public class LoginView extends JPanel {
             showCard("LOGIN");
         });
 
-        return card;
+        return wrapper;
     }
 
-    private JPanel createOnboardingPage(String titleText, String descText, JComponent visualComponent) {
+    // ─── HELPERS ──────────────────────────────────────────────────
+    private JPanel createBrandingPanel() {
+        JPanel panel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.FOREST_PRIMARY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        panel.setOpaque(false);
+
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+
+        LogoPainter logo = new LogoPainter(80);
+        logo.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        content.add(logo);
+        content.add(Box.createRigidArea(new Dimension(0, 16)));
+
+        JLabel brand = new JLabel("NiveshCore360");
+        brand.setFont(UIConstants.FONT_HEADING);
+        brand.setForeground(UIConstants.GOLD_ACCENT);
+        brand.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        content.add(brand);
+        content.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        JLabel tag = new JLabel("Your AI-powered wealth companion");
+        tag.setFont(UIConstants.FONT_CAPTION);
+        tag.setForeground(UIConstants.WARM_IVORY);
+        tag.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        content.add(tag);
+
+        panel.add(content);
+        return panel;
+    }
+
+    private JTextField addFormField(JPanel form, String label) {
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(UIConstants.FONT_CAPTION);
+        lbl.setForeground(UIConstants.LIGHT_TEXT_MUTED);
+        lbl.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(lbl);
+        form.add(Box.createRigidArea(new Dimension(0, 4)));
+
+        JTextField field = new JTextField();
+        field.setFont(UIConstants.FONT_BODY);
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        form.add(field);
+        form.add(Box.createRigidArea(new Dimension(0, 16)));
+        return field;
+    }
+
+    private JPanel createOnboardingPage(String titleText, String descText, JComponent visual) {
         JPanel page = new JPanel();
         page.setLayout(new BoxLayout(page, BoxLayout.Y_AXIS));
         page.setOpaque(false);
 
         page.add(Box.createRigidArea(new Dimension(0, 15)));
-        visualComponent.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
-        page.add(visualComponent);
+        visual.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        page.add(visual);
         page.add(Box.createRigidArea(new Dimension(0, 25)));
 
         JLabel title = new JLabel(titleText, JLabel.CENTER);
-        title.setFont(new Font("sansserif", Font.BOLD, 20));
-        title.setForeground(UIConstants.DARK_TEXT_PRIMARY);
+        title.setFont(UIConstants.FONT_HEADING);
+        title.setForeground(UIConstants.LIGHT_TEXT_PRIMARY);
         title.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         page.add(title);
         page.add(Box.createRigidArea(new Dimension(0, 15)));
 
         JTextArea desc = new JTextArea(descText);
-        desc.setFont(UIConstants.FONT_SUBTITLE);
-        desc.setForeground(UIConstants.DARK_TEXT_MUTED);
+        desc.setFont(UIConstants.FONT_BODY);
+        desc.setForeground(UIConstants.LIGHT_TEXT_MUTED);
         desc.setLineWrap(true);
         desc.setWrapStyleWord(true);
         desc.setEditable(false);
         desc.setOpaque(false);
         desc.setFocusable(false);
-        desc.setMaximumSize(new Dimension(340, 120));
+        desc.setMaximumSize(new Dimension(380, 120));
         desc.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         page.add(desc);
 

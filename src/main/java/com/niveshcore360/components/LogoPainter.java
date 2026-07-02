@@ -1,5 +1,6 @@
 package com.niveshcore360.components;
 
+import com.niveshcore360.constants.UIConstants;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Path2D;
@@ -7,6 +8,7 @@ import java.awt.geom.Path2D;
 /**
  * Custom Swing component that paints the vectorized NiveshCore360 logo.
  * Integrates Rupee, Growth Arrow, Security Shield, and AI Sparkles.
+ * Uses the Forest/Gold brand palette.
  */
 public class LogoPainter extends JComponent {
     
@@ -26,8 +28,8 @@ public class LogoPainter extends JComponent {
         int w = getWidth();
         int h = getHeight();
 
-        // 1. Draw Shield (Security Base Layer)
-        g2.setColor(new Color(139, 92, 246, 30)); // 2FA Transparent Purple
+        // 1. Draw Shield (Security Base Layer) — Forest tint
+        g2.setColor(new Color(UIConstants.FOREST_LIGHT.getRed(), UIConstants.FOREST_LIGHT.getGreen(), UIConstants.FOREST_LIGHT.getBlue(), 50));
         Path2D shield = new Path2D.Double();
         shield.moveTo(w * 0.5, h * 0.1);
         shield.curveTo(w * 0.8, h * 0.1, w * 0.9, h * 0.2, w * 0.85, h * 0.5);
@@ -37,12 +39,12 @@ public class LogoPainter extends JComponent {
         shield.closePath();
         g2.fill(shield);
 
-        g2.setColor(new Color(139, 92, 246, 220)); // Purple boundary lines
+        g2.setColor(UIConstants.GOLD_ACCENT); // Gold boundary lines
         g2.setStroke(new BasicStroke(3.0f));
         g2.draw(shield);
 
-        // 2. Draw Growth Trend (Graph line)
-        g2.setColor(new Color(16, 185, 129)); // Neon Emerald Green
+        // 2. Draw Growth Trend (Graph line) — Profit Green
+        g2.setColor(UIConstants.PROFIT_GREEN);
         g2.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         Path2D graph = new Path2D.Double();
         graph.moveTo(w * 0.28, h * 0.65);
@@ -67,8 +69,8 @@ public class LogoPainter extends JComponent {
         int ry = (h + fm.getAscent() - fm.getDescent()) / 2 - (int) (size * 0.03);
         g2.drawString(rupee, rx, ry);
 
-        // 4. Draw AI Sparkles (Micro Stars)
-        g2.setColor(new Color(251, 191, 36)); // Golden Amber sparkles
+        // 4. Draw AI Sparkles (Micro Stars) — Gold Accent
+        g2.setColor(UIConstants.GOLD_ACCENT);
         drawSparkle(g2, (int) (w * 0.76), (int) (h * 0.22));
         drawSparkle(g2, (int) (w * 0.24), (int) (h * 0.38));
 

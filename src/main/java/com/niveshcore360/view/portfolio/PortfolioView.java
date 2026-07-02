@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -26,7 +28,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Portfolio View allowing full CRUD management of investment holdings (stocks/mutual funds).
+ * Portfolio View with premium styled table, warm-tinted search, and filter chips.
  */
 @Component
 public class PortfolioView extends JPanel {
@@ -53,17 +55,16 @@ public class PortfolioView extends JPanel {
         this.portfolioController = portfolioController;
         this.userSession = userSession;
 
-        setLayout(new BorderLayout(16, 16));
-        setBorder(new EmptyBorder(16, 16, 16, 16));
+        setLayout(new BorderLayout(UIConstants.SPACE_MD, UIConstants.SPACE_MD));
+        setBorder(new EmptyBorder(UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG));
         setOpaque(false);
 
-        // Header panel
+        // ─── Header ─────────────────────────────────────────────────
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
 
         JLabel lblTitle = new JLabel("Manage Portfolio Investments");
-        lblTitle.setFont(UIConstants.FONT_TITLE);
-        lblTitle.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+        lblTitle.setFont(UIConstants.FONT_DISPLAY);
         headerPanel.add(lblTitle, BorderLayout.WEST);
 
         comboPortfolios = new JComboBox<>();
@@ -72,45 +73,54 @@ public class PortfolioView extends JPanel {
         headerPanel.add(comboPortfolios, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // Grid contents
-        JPanel mainContent = new JPanel(new BorderLayout(12, 12));
+        // ─── Content ────────────────────────────────────────────────
+        JPanel mainContent = new JPanel(new BorderLayout(UIConstants.SPACE_SM, UIConstants.SPACE_SM));
         mainContent.setOpaque(false);
 
-        // Toolbar Panel (Search + Filter + CRUD operations)
+        // Toolbar
         JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         toolbarPanel.setOpaque(false);
 
-        toolbarPanel.add(new JLabel("Search:"));
+        JLabel searchLabel = new JLabel("Search:");
+        searchLabel.setFont(UIConstants.FONT_CAPTION);
+        toolbarPanel.add(searchLabel);
+
         txtSearch = new JTextField(15);
-        txtSearch.setPreferredSize(new Dimension(150, 32));
+        txtSearch.setPreferredSize(new Dimension(180, 36));
+        txtSearch.setFont(UIConstants.FONT_BODY);
         txtSearch.addCaretListener(e -> filterAndSearchData());
         toolbarPanel.add(txtSearch);
 
-        toolbarPanel.add(new JLabel("Asset Type:"));
+        JLabel filterLabel = new JLabel("Asset Type:");
+        filterLabel.setFont(UIConstants.FONT_CAPTION);
+        toolbarPanel.add(filterLabel);
+
         comboFilter = new JComboBox<>(new String[]{"All Assets", "Stocks", "Mutual Funds"});
-        comboFilter.setPreferredSize(new Dimension(130, 32));
+        comboFilter.setPreferredSize(new Dimension(130, 36));
         comboFilter.addActionListener(e -> filterAndSearchData());
         toolbarPanel.add(comboFilter);
 
         RoundedButton btnAdd = new RoundedButton("Add Investment");
-        btnAdd.setPreferredSize(new Dimension(130, 32));
+        btnAdd.setPreferredSize(new Dimension(140, 36));
         btnAdd.addActionListener(e -> openInvestmentDialog(null));
         toolbarPanel.add(btnAdd);
 
-        JButton btnEdit = new JButton("Edit");
-        btnEdit.setPreferredSize(new Dimension(80, 32));
+        RoundedButton btnEdit = RoundedButton.secondary("Edit");
+        btnEdit.setPreferredSize(new Dimension(80, 36));
         btnEdit.addActionListener(e -> editSelectedHolding());
         toolbarPanel.add(btnEdit);
 
-        JButton btnDelete = new JButton("Liquidate");
-        btnDelete.setPreferredSize(new Dimension(90, 32));
+        RoundedButton btnDelete = RoundedButton.danger("Liquidate");
+        btnDelete.setPreferredSize(new Dimension(100, 36));
         btnDelete.addActionListener(e -> deleteSelectedHolding());
         toolbarPanel.add(btnDelete);
 
         mainContent.add(toolbarPanel, BorderLayout.NORTH);
 
-        // JTable Card
-        CardPanel tableCard = new CardPanel(new BorderLayout());
+        // ─── Table Card ─────────────────────────────────────────────
+        CardPanel tableCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_SM);
+        tableCard.setHoverLiftEnabled(false);
+
         tableModel = new DefaultTableModel(
                 new Object[]{"ID", "Asset Type", "Symbol", "Company/Fund Name", "Qty", "Buy Price", "Current Price", "Current Value", "Profit/Loss"}, 0
         ) {
@@ -121,8 +131,42 @@ public class PortfolioView extends JPanel {
         };
 
         tblInvestments = new JTable(tableModel);
-        tblInvestments.setRowHeight(28);
-        tblInvestments.getTableHeader().setFont(UIConstants.FONT_BOLD);
+        tblInvestments.setRowHeight(36);
+        tblInvestments.setShowGrid(false);
+        tblInvestments.setIntercellSpacing(new Dimension(0, 0));
+        tblInvestments.setFont(UIConstants.FONT_BODY);
+        tblInvestments.getTableHeader().setFont(UIConstants.FONT_BUTTON);
+        tblInvestments.getTableHeader().setPreferredSize(new Dimension(0, 40));
+
+        // Alternating row colors
+        tblInvestments.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                if (isSelected) {
+                    setBackground(UIConstants.GOLD_SUBTLE);
+                } else if (row % 2 == 0) {
+                    setBackground(ThemeManager.isDarkMode() ? UIConstants.DARK_CARD : UIConstants.LIGHT_CARD);
+                } else {
+                    setBackground(ThemeManager.isDarkMode() ? UIConstants.DARK_BG : UIConstants.LIGHT_BG);
+                }
+                // Color-code P/L column
+                if (column == 8 && value != null) {
+                    String val = value.toString();
+                    if (val.startsWith("-")) {
+                        setForeground(UIConstants.LOSS_RED);
+                    } else {
+                        setForeground(UIConstants.PROFIT_GREEN);
+                    }
+                } else {
+                    setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+                }
+                return this;
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(tblInvestments);
         scrollPane.setBorder(null);
         tableCard.add(scrollPane, BorderLayout.CENTER);
@@ -164,11 +208,9 @@ public class PortfolioView extends JPanel {
         String filterStr = (String) comboFilter.getSelectedItem();
 
         for (InvestmentDTO inv : currentList) {
-            // Search validation
             boolean matchSearch = inv.getSymbol().toLowerCase().contains(searchStr)
                     || inv.getName().toLowerCase().contains(searchStr);
 
-            // Filter validation
             boolean matchFilter = true;
             if ("Stocks".equals(filterStr)) {
                 matchFilter = inv.getAssetType() == AssetType.STOCK;
@@ -231,30 +273,32 @@ public class PortfolioView extends JPanel {
         }
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), editDto == null ? "Add New Holding" : "Modify Holding", true);
-        dialog.setSize(400, 380);
+        dialog.setSize(440, 400);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 12, 6, 12);
+        gbc.insets = new Insets(8, 16, 8, 16);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Form Fields
         gbc.gridx = 0; gbc.gridy = 0;
-        dialog.add(new JLabel("Asset Type:"), gbc);
+        JLabel lbl1 = new JLabel("Asset Type:");
+        lbl1.setFont(UIConstants.FONT_BODY);
+        dialog.add(lbl1, gbc);
 
         JComboBox<AssetType> comboType = new JComboBox<>(AssetType.values());
         gbc.gridx = 1;
         dialog.add(comboType, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
-        dialog.add(new JLabel("Select Asset:"), gbc);
+        JLabel lbl2 = new JLabel("Select Asset:");
+        lbl2.setFont(UIConstants.FONT_BODY);
+        dialog.add(lbl2, gbc);
 
         JComboBox<Object> comboAssetList = new JComboBox<>();
         gbc.gridx = 1;
         dialog.add(comboAssetList, gbc);
 
-        // Populate assets dynamically based on Type selection
         comboType.addActionListener(e -> {
             comboAssetList.removeAllItems();
             if (comboType.getSelectedItem() == AssetType.STOCK) {
@@ -270,32 +314,36 @@ public class PortfolioView extends JPanel {
             }
         });
 
-        // Initialize selection
         comboType.setSelectedItem(AssetType.STOCK);
         comboType.getActionListeners()[0].actionPerformed(null);
 
         gbc.gridx = 0; gbc.gridy = 2;
-        dialog.add(new JLabel("Quantity:"), gbc);
-
+        JLabel lbl3 = new JLabel("Quantity:");
+        lbl3.setFont(UIConstants.FONT_BODY);
+        dialog.add(lbl3, gbc);
         JTextField txtQty = new JTextField("1.0");
+        txtQty.setFont(UIConstants.FONT_BODY);
         gbc.gridx = 1;
         dialog.add(txtQty, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3;
-        dialog.add(new JLabel("Purchase Price:"), gbc);
-
+        JLabel lbl4 = new JLabel("Purchase Price:");
+        lbl4.setFont(UIConstants.FONT_BODY);
+        dialog.add(lbl4, gbc);
         JTextField txtPrice = new JTextField("0.0");
+        txtPrice.setFont(UIConstants.FONT_BODY);
         gbc.gridx = 1;
         dialog.add(txtPrice, gbc);
 
         gbc.gridx = 0; gbc.gridy = 4;
-        dialog.add(new JLabel("Purchase Date (YYYY-MM-DD):"), gbc);
-
+        JLabel lbl5 = new JLabel("Purchase Date (YYYY-MM-DD):");
+        lbl5.setFont(UIConstants.FONT_BODY);
+        dialog.add(lbl5, gbc);
         JTextField txtDate = new JTextField(LocalDate.now().format(dateFormatter));
+        txtDate.setFont(UIConstants.FONT_BODY);
         gbc.gridx = 1;
         dialog.add(txtDate, gbc);
 
-        // If editing, lock Type/Asset selects and pre-fill prices
         if (editDto != null) {
             comboType.setSelectedItem(editDto.getAssetType());
             comboType.setEnabled(false);
@@ -306,7 +354,7 @@ public class PortfolioView extends JPanel {
         }
 
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
-        gbc.insets = new Insets(15, 12, 6, 12);
+        gbc.insets = new Insets(20, 16, 8, 16);
         RoundedButton btnSave = new RoundedButton("Save Record");
         dialog.add(btnSave, gbc);
 

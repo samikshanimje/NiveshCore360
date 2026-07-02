@@ -7,7 +7,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 /**
- * Splash screen showing progress while Spring Boot boots up in the background.
+ * Premium splash screen with forest-green background, gold accents,
+ * and smooth progress bar during Spring Boot initialization.
  */
 public class SplashWindow extends JWindow {
 
@@ -15,40 +16,50 @@ public class SplashWindow extends JWindow {
     private final JLabel statusLabel;
 
     public SplashWindow() {
-        // Set dimensions and center on screen
-        setSize(480, 360);
+        setSize(500, 380);
         setLocationRelativeTo(null);
 
-        // Core Layout Panel
-        JPanel contentPanel = new JPanel();
+        JPanel contentPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Gradient: forest primary to darker
+                GradientPaint gp = new GradientPaint(0, 0, UIConstants.FOREST_PRIMARY,
+                        0, getHeight(), new Color(15, 30, 22));
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
         contentPanel.setLayout(new BorderLayout());
-        contentPanel.setBackground(UIConstants.DARK_BG);
-        contentPanel.setBorder(BorderFactory.createLineBorder(UIConstants.DARK_BORDER, 2));
+        contentPanel.setBorder(BorderFactory.createLineBorder(UIConstants.FOREST_LIGHT, 1));
 
         // Central branding elements
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBackground(UIConstants.DARK_BG);
-        centerPanel.setBorder(new EmptyBorder(40, 20, 20, 20));
+        centerPanel.setOpaque(false);
+        centerPanel.setBorder(new EmptyBorder(50, 20, 20, 20));
 
         // Logo
         LogoPainter logo = new LogoPainter(100);
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
         centerPanel.add(logo);
-        centerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Title
         JLabel titleLabel = new JLabel("NiveshCore360");
-        titleLabel.setFont(new Font("sansserif", Font.BOLD, 26));
-        titleLabel.setForeground(UIConstants.DARK_TEXT_PRIMARY);
+        titleLabel.setFont(UIConstants.FONT_DISPLAY);
+        titleLabel.setForeground(UIConstants.GOLD_ACCENT);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         centerPanel.add(titleLabel);
-        centerPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 8)));
 
         // Tagline
         JLabel taglineLabel = new JLabel("Invest. Track. Grow. Securely.");
-        taglineLabel.setFont(new Font("sansserif", Font.PLAIN, 12));
-        taglineLabel.setForeground(UIConstants.ACCENT_COLOR);
+        taglineLabel.setFont(UIConstants.FONT_BODY);
+        taglineLabel.setForeground(UIConstants.WARM_IVORY);
         taglineLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         centerPanel.add(taglineLabel);
 
@@ -57,19 +68,19 @@ public class SplashWindow extends JWindow {
         // Footer status indicators
         JPanel footerPanel = new JPanel();
         footerPanel.setLayout(new BorderLayout());
-        footerPanel.setBackground(UIConstants.DARK_BG);
-        footerPanel.setBorder(new EmptyBorder(10, 40, 30, 40));
+        footerPanel.setOpaque(false);
+        footerPanel.setBorder(new EmptyBorder(10, 50, 36, 50));
 
-        statusLabel = new JLabel("Loading modules...");
-        statusLabel.setFont(new Font("sansserif", Font.PLAIN, 10));
-        statusLabel.setForeground(UIConstants.DARK_TEXT_MUTED);
-        statusLabel.setBorder(new EmptyBorder(0, 0, 5, 0));
+        statusLabel = new JLabel("Initializing modules...");
+        statusLabel.setFont(UIConstants.FONT_CAPTION);
+        statusLabel.setForeground(UIConstants.CHAMPAGNE);
+        statusLabel.setBorder(new EmptyBorder(0, 0, 6, 0));
         footerPanel.add(statusLabel, BorderLayout.NORTH);
 
         progressBar = new JProgressBar(0, 100);
-        progressBar.setPreferredSize(new Dimension(400, 6));
-        progressBar.setForeground(UIConstants.ACCENT_COLOR);
-        progressBar.setBackground(UIConstants.DARK_BORDER);
+        progressBar.setPreferredSize(new Dimension(400, 5));
+        progressBar.setForeground(UIConstants.GOLD_ACCENT);
+        progressBar.setBackground(UIConstants.FOREST_LIGHT);
         progressBar.setBorderPainted(false);
         footerPanel.add(progressBar, BorderLayout.CENTER);
 

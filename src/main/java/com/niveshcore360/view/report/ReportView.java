@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Report View supporting exporting statements of holdings and transactions in PDF/CSV format.
+ * Report View with warm-themed card form and styled export controls.
  */
 @Component
 public class ReportView extends JPanel {
@@ -52,53 +52,58 @@ public class ReportView extends JPanel {
         this.investmentController = investmentController;
         this.userSession = userSession;
 
-        setLayout(new BorderLayout(16, 16));
-        setBorder(new EmptyBorder(16, 16, 16, 16));
+        setLayout(new BorderLayout(UIConstants.SPACE_MD, UIConstants.SPACE_MD));
+        setBorder(new EmptyBorder(UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG, UIConstants.SPACE_LG));
         setOpaque(false);
 
         JLabel lblTitle = new JLabel("Statement Generator");
-        lblTitle.setFont(UIConstants.FONT_TITLE);
-        lblTitle.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+        lblTitle.setFont(UIConstants.FONT_DISPLAY);
         add(lblTitle, BorderLayout.NORTH);
 
         // Center card panel
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.setOpaque(false);
 
-        CardPanel formCard = new CardPanel(new GridBagLayout());
-        formCard.setPreferredSize(new Dimension(500, 360));
+        CardPanel formCard = new CardPanel(new GridBagLayout(), UIConstants.SPACE_LG);
+        formCard.setPreferredSize(new Dimension(520, 380));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 12, 8, 12);
+        gbc.insets = new Insets(10, 16, 10, 16);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         gbc.gridx = 0; gbc.gridy = 0;
-        formCard.add(new JLabel("Select Portfolio:"), gbc);
+        JLabel l1 = new JLabel("Select Portfolio:");
+        l1.setFont(UIConstants.FONT_BODY);
+        formCard.add(l1, gbc);
         comboPortfolios = new JComboBox<>();
-        comboPortfolios.setPreferredSize(new Dimension(280, 36));
+        comboPortfolios.setPreferredSize(new Dimension(280, 38));
         gbc.gridx = 1;
         formCard.add(comboPortfolios, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
-        formCard.add(new JLabel("Statement Type:"), gbc);
+        JLabel l2 = new JLabel("Statement Type:");
+        l2.setFont(UIConstants.FONT_BODY);
+        formCard.add(l2, gbc);
         comboReportType = new JComboBox<>(new String[]{
                 "Portfolio Valuation Summary",
                 "Transaction Ledger History"
         });
-        comboReportType.setPreferredSize(new Dimension(280, 36));
+        comboReportType.setPreferredSize(new Dimension(280, 38));
         gbc.gridx = 1;
         formCard.add(comboReportType, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2;
-        formCard.add(new JLabel("Export Format:"), gbc);
+        JLabel l3 = new JLabel("Export Format:");
+        l3.setFont(UIConstants.FONT_BODY);
+        formCard.add(l3, gbc);
         comboFormatType = new JComboBox<>(new String[]{"PDF Document", "CSV Spreadsheet"});
-        comboFormatType.setPreferredSize(new Dimension(280, 36));
+        comboFormatType.setPreferredSize(new Dimension(280, 38));
         gbc.gridx = 1;
         formCard.add(comboFormatType, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        gbc.insets = new Insets(20, 12, 8, 12);
+        gbc.insets = new Insets(24, 16, 10, 16);
         RoundedButton btnExport = new RoundedButton("Generate & Save Statement");
-        btnExport.setPreferredSize(new Dimension(280, 42));
+        btnExport.setPreferredSize(new Dimension(280, 44));
         formCard.add(btnExport, gbc);
 
         btnExport.addActionListener(e -> generateReport());
@@ -126,7 +131,6 @@ public class ReportView extends JPanel {
         String reportType = (String) comboReportType.getSelectedItem();
         String formatType = (String) comboFormatType.getSelectedItem();
 
-        // 1. Choose path
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Specify File Destination");
         String extension = "PDF Document".equals(formatType) ? ".pdf" : ".csv";
@@ -164,10 +168,10 @@ public class ReportView extends JPanel {
 
                 if (extension.equals(".pdf")) {
                     PDFGeneratorUtil.generateReportPDF(
-                            path, 
-                            "NiveshCore360 Portfolio Statement", 
-                            "Portfolio: " + selected.name + " | Date: " + LocalDateTime.now().format(dateTimeFormatter), 
-                            headers, 
+                            path,
+                            "NiveshCore360 Portfolio Statement",
+                            "Portfolio: " + selected.name + " | Date: " + LocalDateTime.now().format(dateTimeFormatter),
+                            headers,
                             dataRows
                     );
                 } else {
@@ -175,7 +179,6 @@ public class ReportView extends JPanel {
                 }
 
             } else {
-                // Transaction Activity Statement
                 List<Transaction> transactions = portfolioController.getTransactions(selected.id);
                 String[] headers = {"ID", "Type", "Execution Date", "Total Value", "Details"};
                 List<String[]> dataRows = new ArrayList<>();
@@ -191,10 +194,10 @@ public class ReportView extends JPanel {
 
                 if (extension.equals(".pdf")) {
                     PDFGeneratorUtil.generateReportPDF(
-                            path, 
-                            "NiveshCore360 Transaction ledger", 
-                            "Portfolio: " + selected.name + " | Date: " + LocalDateTime.now().format(dateTimeFormatter), 
-                            headers, 
+                            path,
+                            "NiveshCore360 Transaction ledger",
+                            "Portfolio: " + selected.name + " | Date: " + LocalDateTime.now().format(dateTimeFormatter),
+                            headers,
                             dataRows
                     );
                 } else {

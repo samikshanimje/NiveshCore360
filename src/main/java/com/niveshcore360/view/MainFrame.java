@@ -1,6 +1,7 @@
 package com.niveshcore360.view;
 
-import com.niveshcore360.components.RoundedButton;
+import com.niveshcore360.components.LogoPainter;
+import com.niveshcore360.components.NavButton;
 import com.niveshcore360.components.ThemeManager;
 import com.niveshcore360.constants.UIConstants;
 import com.niveshcore360.entity.Role;
@@ -21,9 +22,11 @@ import jakarta.annotation.PostConstruct;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Primary Application Window coordinating between authentication and workspace dashboards.
+ * Primary Application Window with premium forest-green sidebar and warm header.
  */
 @Component
 public class MainFrame extends JFrame implements UserSession.SessionListener {
@@ -45,7 +48,10 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
     private JPanel workspaceContainer;
 
     private JLabel lblUserBadge;
-    private JButton btnAdminNav;
+    private JLabel lblPageTitle;
+    private NavButton btnAdminNav;
+
+    private final List<NavButton> navButtons = new ArrayList<>();
 
     @Autowired
     public MainFrame(UserSession userSession,
@@ -100,67 +106,140 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         JPanel shell = new JPanel(new BorderLayout());
         shell.setOpaque(false);
 
-        // 1. Sidebar Navigation
-        JPanel sidebar = new JPanel(new GridBagLayout());
-        sidebar.setPreferredSize(new Dimension(220, 800));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIConstants.DARK_BORDER));
-        
-        // Define navigation buttons
-        JButton btnDash = createNavButton("Dashboard");
-        JButton btnPort = createNavButton("Portfolio");
-        JButton btnGoal = createNavButton("Milestones");
-        JButton btnCalc = createNavButton("Calculators");
-        JButton btnRep = createNavButton("Statements");
-        JButton btnChat = createNavButton("AI Advisor");
-        btnAdminNav = createNavButton("Admin Panel");
-        btnAdminNav.setVisible(false); // Hidden by default, toggled upon user role on login
+        // ─── SIDEBAR (Forest Green) ────────────────────────────────
+        JPanel sidebar = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(UIConstants.FOREST_PRIMARY);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setPreferredSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 800));
+        sidebar.setBorder(new EmptyBorder(16, 8, 16, 8));
+        sidebar.setOpaque(false);
 
-        JButton btnTheme = createNavButton("Switch Theme");
-        JButton btnLogout = createNavButton("Sign Out");
+        // Brand header
+        JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        brandPanel.setOpaque(false);
+        brandPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        LogoPainter logo = new LogoPainter(36);
+        logo.setPreferredSize(new Dimension(36, 36));
+        brandPanel.add(logo);
+        JLabel brandLabel = new JLabel("NiveshCore360");
+        brandLabel.setFont(UIConstants.FONT_SUBHEADING);
+        brandLabel.setForeground(UIConstants.GOLD_ACCENT);
+        brandPanel.add(brandLabel);
+        sidebar.add(brandPanel);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 24)));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 15, 10, 15);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
+        // Navigation items
+        NavButton btnDash = createNavItem("Dashboard", "dashboard");
+        NavButton btnPort = createNavItem("Portfolio", "portfolio");
+        NavButton btnGoal = createNavItem("Milestones", "goals");
+        NavButton btnCalc = createNavItem("Calculators", "calculator");
+        NavButton btnRep  = createNavItem("Statements", "statements");
+        NavButton btnChat = createNavItem("AI Advisor", "ai");
+        btnAdminNav = createNavItem("Admin Panel", "admin");
+        btnAdminNav.setVisible(false);
 
-        // Branding Title
-        JLabel brand = new JLabel("NIVESH CORE", JLabel.CENTER);
-        brand.setFont(new Font("sansserif", Font.BOLD, 18));
-        brand.setForeground(UIConstants.ACCENT_COLOR);
-        gbc.gridx = 0; gbc.gridy = 0;
-        sidebar.add(brand, gbc);
+        sidebar.add(btnDash);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnPort);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnGoal);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnCalc);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnRep);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnChat);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnAdminNav);
 
-        gbc.gridy = 1; sidebar.add(btnDash, gbc);
-        gbc.gridy = 2; sidebar.add(btnPort, gbc);
-        gbc.gridy = 3; sidebar.add(btnGoal, gbc);
-        gbc.gridy = 4; sidebar.add(btnCalc, gbc);
-        gbc.gridy = 5; sidebar.add(btnRep, gbc);
-        gbc.gridy = 6; sidebar.add(btnChat, gbc);
-        gbc.gridy = 7; sidebar.add(btnAdminNav, gbc);
+        // Push remaining to bottom
+        sidebar.add(Box.createVerticalGlue());
 
-        // Sidebar Bottom utility items
-        gbc.gridy = 7;
-        gbc.weighty = 1.0;
-        sidebar.add(Box.createGlue(), gbc); // vertical push spacer
+        // Divider
+        JSeparator sep = new JSeparator(SwingConstants.HORIZONTAL);
+        sep.setForeground(UIConstants.FOREST_LIGHT);
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sidebar.add(sep);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        gbc.weighty = 0.0;
-        gbc.gridy = 8; sidebar.add(btnTheme, gbc);
-        gbc.gridy = 9; sidebar.add(btnLogout, gbc);
+        // Bottom utility nav
+        NavButton btnTheme  = createNavItem("Switch Theme", "theme");
+        NavButton btnLogout = createNavItem("Sign Out", "logout");
+        sidebar.add(btnTheme);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 4)));
+        sidebar.add(btnLogout);
 
         shell.add(sidebar, BorderLayout.WEST);
 
-        // 2. Top Header status bar
-        JPanel header = new JPanel(new BorderLayout());
-        header.setPreferredSize(new Dimension(1000, 55));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.DARK_BORDER));
-        
-        lblUserBadge = new JLabel("Guest Account", JLabel.RIGHT);
-        lblUserBadge.setFont(UIConstants.FONT_HEADER);
-        lblUserBadge.setBorder(new EmptyBorder(0, 0, 0, 20));
-        header.add(lblUserBadge, BorderLayout.EAST);
+        // ─── TOP HEADER BAR ────────────────────────────────────────
+        JPanel header = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                boolean dark = ThemeManager.isDarkMode();
+                g.setColor(dark ? UIConstants.DARK_CARD : UIConstants.LIGHT_CARD);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColor(dark ? UIConstants.DARK_BORDER : UIConstants.LIGHT_BORDER);
+                g.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
+            }
+        };
+        header.setPreferredSize(new Dimension(1000, UIConstants.HEADER_HEIGHT));
+        header.setBorder(new EmptyBorder(0, 24, 0, 24));
+        header.setOpaque(false);
+
+        lblPageTitle = new JLabel("Dashboard");
+        lblPageTitle.setFont(UIConstants.FONT_HEADING);
+        header.add(lblPageTitle, BorderLayout.WEST);
+
+        // User badge with avatar circle
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        userPanel.setOpaque(false);
+
+        lblUserBadge = new JLabel("Guest Account");
+        lblUserBadge.setFont(UIConstants.FONT_BODY);
+        userPanel.add(lblUserBadge);
+
+        // Painted avatar circle
+        JPanel avatarCircle = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(UIConstants.GOLD_ACCENT);
+                g2.fillOval(0, 0, 34, 34);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Dialog", Font.BOLD, 13));
+                FontMetrics fm = g2.getFontMetrics();
+                String initials = getInitials();
+                int tx = (34 - fm.stringWidth(initials)) / 2;
+                int ty = (34 + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(initials, tx, ty);
+                g2.dispose();
+            }
+
+            private String getInitials() {
+                String name = lblUserBadge.getText();
+                if (name.contains("(")) name = name.substring(0, name.indexOf("(")).trim();
+                String[] parts = name.split("\\s+");
+                if (parts.length >= 2) return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+                return name.length() >= 2 ? name.substring(0, 2).toUpperCase() : name.toUpperCase();
+            }
+        };
+        avatarCircle.setPreferredSize(new Dimension(34, 34));
+        avatarCircle.setOpaque(false);
+        userPanel.add(avatarCircle);
+
+        header.add(userPanel, BorderLayout.EAST);
         shell.add(header, BorderLayout.NORTH);
 
-        // 3. Workspace card panel
+        // ─── WORKSPACE CARD PANEL ──────────────────────────────────
         workspaceCardLayout = new CardLayout();
         workspaceContainer = new JPanel(workspaceCardLayout);
         workspaceContainer.setOpaque(false);
@@ -176,13 +255,13 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         shell.add(workspaceContainer, BorderLayout.CENTER);
 
         // Wire Sidebar Events
-        btnDash.addActionListener(e -> showWorkspaceCard("DASHBOARD"));
-        btnPort.addActionListener(e -> showWorkspaceCard("PORTFOLIO"));
-        btnGoal.addActionListener(e -> showWorkspaceCard("GOALS"));
-        btnCalc.addActionListener(e -> showWorkspaceCard("CALCS"));
-        btnRep.addActionListener(e -> showWorkspaceCard("REPORTS"));
-        btnChat.addActionListener(e -> showWorkspaceCard("CHATBOT"));
-        btnAdminNav.addActionListener(e -> showWorkspaceCard("ADMIN"));
+        btnDash.addActionListener(e -> { setActiveNav(btnDash); showWorkspaceCard("DASHBOARD"); lblPageTitle.setText("Dashboard"); });
+        btnPort.addActionListener(e -> { setActiveNav(btnPort); showWorkspaceCard("PORTFOLIO"); lblPageTitle.setText("Portfolio"); });
+        btnGoal.addActionListener(e -> { setActiveNav(btnGoal); showWorkspaceCard("GOALS"); lblPageTitle.setText("Milestones"); });
+        btnCalc.addActionListener(e -> { setActiveNav(btnCalc); showWorkspaceCard("CALCS"); lblPageTitle.setText("Calculators"); });
+        btnRep.addActionListener(e  -> { setActiveNav(btnRep);  showWorkspaceCard("REPORTS"); lblPageTitle.setText("Statements"); });
+        btnChat.addActionListener(e -> { setActiveNav(btnChat); showWorkspaceCard("CHATBOT"); lblPageTitle.setText("AI Advisor"); });
+        btnAdminNav.addActionListener(e -> { setActiveNav(btnAdminNav); showWorkspaceCard("ADMIN"); lblPageTitle.setText("Admin Panel"); });
 
         btnTheme.addActionListener(e -> {
             ThemeManager.toggleTheme();
@@ -191,17 +270,24 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
 
         btnLogout.addActionListener(e -> userSession.logout());
 
+        // Set default active
+        btnDash.setActive(true);
+
         return shell;
     }
 
-    private JButton createNavButton(String label) {
-        JButton btn = new JButton(label);
-        btn.setFont(UIConstants.FONT_HEADER);
-        btn.setPreferredSize(new Dimension(180, 36));
-        btn.setFocusPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    private NavButton createNavItem(String label, String iconType) {
+        NavButton btn = new NavButton(label, iconType);
+        btn.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        navButtons.add(btn);
         return btn;
+    }
+
+    private void setActiveNav(NavButton active) {
+        for (NavButton btn : navButtons) {
+            btn.setActive(btn == active);
+        }
     }
 
     private void showWorkspaceCard(String name) {
@@ -227,7 +313,7 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
         if (user != null) {
             // Authenticated: Initialize badges and admin views
             lblUserBadge.setText(user.getFullName() != null ? user.getFullName() + " (" + user.getUsername() + ")" : user.getUsername());
-            
+
             boolean isAdmin = user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equalsIgnoreCase(r.getName()));
             btnAdminNav.setVisible(isAdmin);
 

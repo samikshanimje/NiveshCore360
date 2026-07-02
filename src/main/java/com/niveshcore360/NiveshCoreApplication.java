@@ -25,39 +25,46 @@ public class NiveshCoreApplication {
         splash.updateProgress(15, "Initializing Java Runtime...");
 
         try {
-            Thread.sleep(300);
+            Thread.sleep(150);
         } catch (InterruptedException ignored) {}
 
         splash.updateProgress(35, "Configuring Spring Context Boot...");
 
-        // 2. Boot Spring Application context in a Swing-compatible non-headless mode
-        ConfigurableApplicationContext context = new SpringApplicationBuilder(NiveshCoreApplication.class)
-                .headless(false)
-                .run(args);
+        // Start Spring application in a separate thread to keep EDT responsive
+        new Thread(() -> {
+            try {
+                ConfigurableApplicationContext context = new SpringApplicationBuilder(NiveshCoreApplication.class)
+                        .headless(false)
+                        .run(args);
 
-        splash.updateProgress(65, "Initializing Database & Seeding Assets...");
+                splash.updateProgress(65, "Initializing Database & Seeding Assets...");
 
-        // Dynamically invoke market database seeding
-        try {
-            MarketService marketService = context.getBean(MarketService.class);
-            marketService.seedMarketAssets();
-        } catch (Exception e) {
-            System.err.println("Market seeding failure: " + e.getMessage());
-        }
+                // Dynamically invoke market database seeding
+                try {
+                    MarketService marketService = context.getBean(MarketService.class);
+                    marketService.seedMarketAssets();
+                } catch (Exception e) {
+                    System.err.println("Market seeding failure: " + e.getMessage());
+                }
 
-        splash.updateProgress(85, "Building Premium Workspaces...");
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException ignored) {}
+                splash.updateProgress(85, "Building Premium Workspaces...");
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException ignored) {}
 
-        splash.updateProgress(100, "Starting NiveshCore360!");
+                splash.updateProgress(100, "Starting NiveshCore360!");
 
-        // 3. Schedule MainFrame display on the Event Dispatch Thread (EDT) and dispose splash
-        EventQueue.invokeLater(() -> {
-            splash.setVisible(false);
-            splash.dispose();
-            MainFrame mainFrame = context.getBean(MainFrame.class);
-            mainFrame.setVisible(true);
-        });
+                // 3. Schedule MainFrame display on the Event Dispatch Thread (EDT) and dispose splash
+                EventQueue.invokeLater(() -> {
+                    splash.setVisible(false);
+                    splash.dispose();
+                    MainFrame mainFrame = context.getBean(MainFrame.class);
+                    mainFrame.setVisible(true);
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                System.exit(1);
+            }
+        }).start();
     }
 }
