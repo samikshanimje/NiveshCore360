@@ -12,6 +12,7 @@ import com.niveshcore360.entity.Transaction;
 import com.niveshcore360.security.UserSession;
 import com.niveshcore360.util.CSVExporterUtil;
 import com.niveshcore360.util.PDFGeneratorUtil;
+import com.niveshcore360.util.ExcelExporterUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -95,7 +96,7 @@ public class ReportView extends JPanel {
         JLabel l3 = new JLabel("Export Format:");
         l3.setFont(UIConstants.FONT_BODY);
         formCard.add(l3, gbc);
-        comboFormatType = new JComboBox<>(new String[]{"PDF Document", "CSV Spreadsheet"});
+        comboFormatType = new JComboBox<>(new String[]{"PDF Document", "CSV Spreadsheet", "Excel Worksheet"});
         comboFormatType.setPreferredSize(new Dimension(280, 38));
         gbc.gridx = 1;
         formCard.add(comboFormatType, gbc);
@@ -133,7 +134,7 @@ public class ReportView extends JPanel {
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Specify File Destination");
-        String extension = "PDF Document".equals(formatType) ? ".pdf" : ".csv";
+        String extension = "PDF Document".equals(formatType) ? ".pdf" : ("CSV Spreadsheet".equals(formatType) ? ".csv" : ".xls");
         fileChooser.setSelectedFile(new File(selected.name.replace(" ", "_") + "_Statement" + extension));
 
         int choice = fileChooser.showSaveDialog(this);
@@ -174,6 +175,8 @@ public class ReportView extends JPanel {
                             headers,
                             dataRows
                     );
+                } else if (extension.equals(".xls")) {
+                    ExcelExporterUtil.exportToExcel(path, headers, dataRows);
                 } else {
                     CSVExporterUtil.exportToCSV(path, headers, dataRows);
                 }
@@ -200,6 +203,8 @@ public class ReportView extends JPanel {
                             headers,
                             dataRows
                     );
+                } else if (extension.equals(".xls")) {
+                    ExcelExporterUtil.exportToExcel(path, headers, dataRows);
                 } else {
                     CSVExporterUtil.exportToCSV(path, headers, dataRows);
                 }

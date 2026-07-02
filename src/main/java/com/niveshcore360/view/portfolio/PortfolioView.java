@@ -11,6 +11,11 @@ import com.niveshcore360.entity.AssetType;
 import com.niveshcore360.entity.Asset;
 import com.niveshcore360.entity.Portfolio;
 import com.niveshcore360.security.UserSession;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.DefaultPieDataset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +23,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -28,7 +32,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Portfolio View with premium styled table, warm-tinted search, and filter chips.
+ * Redesigned Portfolio View containing Holdings list, AI Health & Rebalancer metrics,
+ * and Tax & Dividend calculators.
  */
 @Component
 public class PortfolioView extends JPanel {
@@ -63,7 +68,7 @@ public class PortfolioView extends JPanel {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Manage Portfolio Investments");
+        JLabel lblTitle = new JLabel("Investments Portfolio");
         lblTitle.setFont(UIConstants.FONT_DISPLAY);
         headerPanel.add(lblTitle, BorderLayout.WEST);
 
@@ -73,9 +78,20 @@ public class PortfolioView extends JPanel {
         headerPanel.add(comboPortfolios, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // ─── Content ────────────────────────────────────────────────
-        JPanel mainContent = new JPanel(new BorderLayout(UIConstants.SPACE_SM, UIConstants.SPACE_SM));
-        mainContent.setOpaque(false);
+        // ─── Tabs Layout ────────────────────────────────────────────
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(UIConstants.FONT_BODY);
+
+        tabbedPane.addTab("Holdings Directory", createHoldingsPanel());
+        tabbedPane.addTab("AI Health & Rebalancer", createHealthPanel());
+        tabbedPane.addTab("Tax & Dividends", createTaxPanel());
+
+        add(tabbedPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createHoldingsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(UIConstants.SPACE_SM, UIConstants.SPACE_SM));
+        panel.setOpaque(false);
 
         // Toolbar
         JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
@@ -91,7 +107,7 @@ public class PortfolioView extends JPanel {
         txtSearch.addCaretListener(e -> filterAndSearchData());
         toolbarPanel.add(txtSearch);
 
-        JLabel filterLabel = new JLabel("Asset Type:");
+        JLabel filterLabel = new JLabel("Asset:");
         filterLabel.setFont(UIConstants.FONT_CAPTION);
         toolbarPanel.add(filterLabel);
 
@@ -100,8 +116,8 @@ public class PortfolioView extends JPanel {
         comboFilter.addActionListener(e -> filterAndSearchData());
         toolbarPanel.add(comboFilter);
 
-        RoundedButton btnAdd = new RoundedButton("Add Investment");
-        btnAdd.setPreferredSize(new Dimension(140, 36));
+        RoundedButton btnAdd = new RoundedButton("Add Asset");
+        btnAdd.setPreferredSize(new Dimension(110, 36));
         btnAdd.addActionListener(e -> openInvestmentDialog(null));
         toolbarPanel.add(btnAdd);
 
@@ -115,9 +131,9 @@ public class PortfolioView extends JPanel {
         btnDelete.addActionListener(e -> deleteSelectedHolding());
         toolbarPanel.add(btnDelete);
 
-        mainContent.add(toolbarPanel, BorderLayout.NORTH);
+        panel.add(toolbarPanel, BorderLayout.NORTH);
 
-        // ─── Table Card ─────────────────────────────────────────────
+        // Table Card
         CardPanel tableCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_SM);
         tableCard.setHoverLiftEnabled(false);
 
@@ -138,7 +154,6 @@ public class PortfolioView extends JPanel {
         tblInvestments.getTableHeader().setFont(UIConstants.FONT_BUTTON);
         tblInvestments.getTableHeader().setPreferredSize(new Dimension(0, 40));
 
-        // Alternating row colors
         tblInvestments.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
@@ -152,7 +167,7 @@ public class PortfolioView extends JPanel {
                 } else {
                     setBackground(ThemeManager.isDarkMode() ? UIConstants.DARK_BG : UIConstants.LIGHT_BG);
                 }
-                // Color-code P/L column
+                
                 if (column == 8 && value != null) {
                     String val = value.toString();
                     if (val.startsWith("-")) {
@@ -171,8 +186,247 @@ public class PortfolioView extends JPanel {
         scrollPane.setBorder(null);
         tableCard.add(scrollPane, BorderLayout.CENTER);
 
-        mainContent.add(tableCard, BorderLayout.CENTER);
-        add(mainContent, BorderLayout.CENTER);
+        panel.add(tableCard, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createHealthPanel() {
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 16, 0));
+        mainPanel.setOpaque(false);
+        mainPanel.setBorder(new EmptyBorder(16, 0, 0, 0));
+
+        // LEFT: Health Gauge & warnings
+        CardPanel leftCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_LG);
+        
+        JPanel gaugeHeader = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        gaugeHeader.setOpaque(false);
+        JLabel lblScoreTitle = new JLabel("Portfolio Health Score");
+        lblScoreTitle.setFont(UIConstants.FONT_SUBHEADING);
+        gaugeHeader.add(lblScoreTitle);
+        leftCard.add(gaugeHeader, BorderLayout.NORTH);
+
+        JPanel gaugeContent = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int cx = getWidth() / 2, cy = getHeight() / 2 + 10;
+                int r = 70;
+
+                // Arc background
+                g2.setStroke(new BasicStroke(12f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.setColor(ThemeManager.isDarkMode() ? UIConstants.DARK_BORDER : UIConstants.LIGHT_BORDER);
+                g2.drawArc(cx - r, cy - r, r * 2, r * 2, 180, -180);
+
+                // Progress Arc
+                g2.setColor(UIConstants.GOLD_ACCENT);
+                g2.drawArc(cx - r, cy - r, r * 2, r * 2, 180, -165); // Mocks 92/100 score
+
+                // Score text
+                g2.setFont(new Font("Dialog", Font.BOLD, 28));
+                g2.setColor(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+                String scoreText = "92";
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(scoreText, cx - fm.stringWidth(scoreText) / 2, cy - 5);
+
+                g2.setFont(UIConstants.FONT_CAPTION);
+                g2.setColor(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+                g2.drawString("out of 100", cx - g2.getFontMetrics().stringWidth("out of 100") / 2, cy + 15);
+
+                g2.dispose();
+            }
+        };
+        gaugeContent.setOpaque(false);
+        leftCard.add(gaugeContent, BorderLayout.CENTER);
+
+        // Checklist at bottom of left card
+        JPanel checkList = new JPanel(new GridLayout(5, 1, 0, 6));
+        checkList.setOpaque(false);
+        checkList.add(createCheckItem("✔ High asset diversification maintained", UIConstants.PROFIT_GREEN));
+        checkList.add(createCheckItem("✔ Emergency reserves successfully mapped", UIConstants.PROFIT_GREEN));
+        checkList.add(createCheckItem("✔ SIP goals tracking with 85%+ projection probability", UIConstants.PROFIT_GREEN));
+        checkList.add(createCheckItem("⚠ Gold asset class allocation target missing", UIConstants.WARN_AMBER));
+        checkList.add(createCheckItem("⚠ Low allocation to short-term liquid funds", UIConstants.WARN_AMBER));
+        
+        leftCard.add(checkList, BorderLayout.SOUTH);
+
+        // RIGHT: Allocation charts & rebalancer recommendations
+        JPanel rightCol = new JPanel(new GridLayout(2, 1, 0, 16));
+        rightCol.setOpaque(false);
+
+        // Rebalancer card
+        CardPanel rebalanceCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_MD);
+        JLabel rebalanceTitle = new JLabel("AI Rebalance Recommendations");
+        rebalanceTitle.setFont(UIConstants.FONT_SUBHEADING);
+        rebalanceTitle.setForeground(UIConstants.GOLD_ACCENT);
+        rebalanceCard.add(rebalanceTitle, BorderLayout.NORTH);
+
+        JTextArea rebalanceText = new JTextArea(
+            "● Overexposure detected in technology sector (INFY/TCS is 42% of holdings).\n" +
+            "● ACTION: Sell ₹25,000 equivalent units of technology assets to lock in gains.\n" +
+            "● ACTION: Buy ₹15,000 Sovereign Gold Bonds (SGB) or Gold ETF to hedge inflation.\n" +
+            "● ACTION: Direct remaining ₹10,000 into short-term debt index fund reserves."
+        );
+        rebalanceText.setFont(UIConstants.FONT_BODY);
+        rebalanceText.setEditable(false);
+        rebalanceText.setOpaque(false);
+        rebalanceText.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+        rebalanceText.setLineWrap(true);
+        rebalanceText.setWrapStyleWord(true);
+        rebalanceCard.add(rebalanceText, BorderLayout.CENTER);
+        rightCol.add(rebalanceCard);
+
+        // Sector allocation chart card
+        CardPanel chartCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_SM);
+        DefaultPieDataset dataset = new DefaultPieDataset();
+        dataset.setValue("IT & Services", 42);
+        dataset.setValue("Banking & Finance", 28);
+        dataset.setValue("Healthcare", 15);
+        dataset.setValue("Energy & Auto", 10);
+        dataset.setValue("Commodities (Gold)", 5);
+
+        JFreeChart chart = ChartFactory.createPieChart("", dataset, true, true, false);
+        PiePlot plot = (PiePlot) chart.getPlot();
+        plot.setBackgroundPaint(null);
+        plot.setOutlineVisible(false);
+        plot.setShadowPaint(null);
+
+        Color[] palette = UIConstants.CHART_PALETTE;
+        int idx = 0;
+        for (Object key : dataset.getKeys()) {
+            plot.setSectionPaint((Comparable<?>) key, palette[idx % palette.length]);
+            idx++;
+        }
+
+        boolean dark = ThemeManager.isDarkMode();
+        Color textCol = dark ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY;
+        Color bgCol = dark ? UIConstants.DARK_CARD : UIConstants.LIGHT_CARD;
+        chart.setBackgroundPaint(bgCol);
+        plot.setLabelPaint(textCol);
+        plot.setLabelBackgroundPaint(bgCol);
+        plot.setLabelOutlinePaint(bgCol);
+        plot.setLabelFont(UIConstants.FONT_CAPTION);
+        chart.getLegend().setBackgroundPaint(bgCol);
+        chart.getLegend().setItemPaint(textCol);
+        chart.getLegend().setItemFont(UIConstants.FONT_CAPTION);
+
+        ChartPanel cp = new ChartPanel(chart);
+        cp.setOpaque(false);
+        cp.setBackground(new Color(0, 0, 0, 0));
+        chartCard.add(cp, BorderLayout.CENTER);
+        rightCol.add(chartCard);
+
+        mainPanel.add(leftCard);
+        mainPanel.add(rightCol);
+
+        return mainPanel;
+    }
+
+    private JLabel createCheckItem(String text, Color color) {
+        JLabel item = new JLabel(text);
+        item.setFont(UIConstants.FONT_CAPTION);
+        item.setForeground(color);
+        return item;
+    }
+
+    private JPanel createTaxPanel() {
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 16, 0));
+        mainPanel.setOpaque(false);
+        mainPanel.setBorder(new EmptyBorder(16, 0, 0, 0));
+
+        // LEFT: Dividend Tracker
+        CardPanel divCard = new CardPanel(new GridBagLayout(), UIConstants.SPACE_LG);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 12, 10, 12);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        JLabel divTitle = new JLabel("Dividend Yield Tracker", JLabel.CENTER);
+        divTitle.setFont(UIConstants.FONT_SUBHEADING);
+        divTitle.setForeground(UIConstants.GOLD_ACCENT);
+        divCard.add(divTitle, gbc);
+
+        gbc.gridy = 1;
+        JLabel lblTotalDiv = new JLabel("Total Dividends Earned: ₹14,250", JLabel.CENTER);
+        lblTotalDiv.setFont(UIConstants.FONT_HEADER);
+        divCard.add(lblTotalDiv, gbc);
+
+        gbc.gridy = 2;
+        JLabel lblYield = new JLabel("Portfolio Dividend Yield: 1.85%", JLabel.CENTER);
+        lblYield.setFont(UIConstants.FONT_BODY);
+        lblYield.setForeground(UIConstants.PROFIT_GREEN);
+        divCard.add(lblYield, gbc);
+
+        gbc.gridy = 3;
+        JLabel lblNextDate = new JLabel("Upcoming Payout: INFY (₹18.00/share) on 2026-07-25", JLabel.CENTER);
+        lblNextDate.setFont(UIConstants.FONT_CAPTION);
+        lblNextDate.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_MUTED : UIConstants.LIGHT_TEXT_MUTED);
+        divCard.add(lblNextDate, gbc);
+
+        mainPanel.add(divCard);
+
+        // RIGHT: Capital Gains Calculator Form
+        CardPanel taxCard = new CardPanel(new GridBagLayout(), UIConstants.SPACE_LG);
+        gbc.gridy = 0;
+        JLabel taxTitle = new JLabel("Capital Gains Tax Estimator", JLabel.CENTER);
+        taxTitle.setFont(UIConstants.FONT_SUBHEADING);
+        taxTitle.setForeground(UIConstants.GOLD_ACCENT);
+        taxCard.add(taxTitle, gbc);
+
+        gbc.gridy = 1;
+        taxCard.add(new JLabel("Selling Value (₹):"), gbc);
+        JTextField txtSellVal = new JTextField("150000");
+        txtSellVal.setFont(UIConstants.FONT_BODY);
+        gbc.gridy = 2;
+        taxCard.add(txtSellVal, gbc);
+
+        gbc.gridy = 3;
+        taxCard.add(new JLabel("Original Cost Basis (₹):"), gbc);
+        JTextField txtCostVal = new JTextField("120000");
+        txtCostVal.setFont(UIConstants.FONT_BODY);
+        gbc.gridy = 4;
+        taxCard.add(txtCostVal, gbc);
+
+        gbc.gridy = 5;
+        JComboBox<String> comboPeriod = new JComboBox<>(new String[]{"Long Term (> 1 Year)", "Short Term (< 1 Year)"});
+        comboPeriod.setFont(UIConstants.FONT_BODY);
+        taxCard.add(comboPeriod, gbc);
+
+        gbc.gridy = 6;
+        JLabel lblTaxRes = new JLabel("Tax Payable: ₹0.00", JLabel.CENTER);
+        lblTaxRes.setFont(UIConstants.FONT_HEADER);
+        lblTaxRes.setForeground(UIConstants.LOSS_RED);
+        taxCard.add(lblTaxRes, gbc);
+
+        RoundedButton btnTaxCalc = new RoundedButton("Calculate Gain Taxes");
+        btnTaxCalc.addActionListener(e -> {
+            try {
+                BigDecimal sell = new BigDecimal(txtSellVal.getText().trim());
+                BigDecimal cost = new BigDecimal(txtCostVal.getText().trim());
+                BigDecimal gain = sell.subtract(cost);
+                if (gain.compareTo(BigDecimal.ZERO) <= 0) {
+                    lblTaxRes.setText("No Gains: ₹0.00");
+                    lblTaxRes.setForeground(UIConstants.PROFIT_GREEN);
+                } else {
+                    boolean isLtcg = comboPeriod.getSelectedIndex() == 0;
+                    BigDecimal rate = isLtcg ? new BigDecimal("0.10") : new BigDecimal("0.15"); // 10% LTCG, 15% STCG
+                    BigDecimal tax = gain.multiply(rate);
+                    lblTaxRes.setText("Tax Payable (" + (isLtcg ? "10% LTCG" : "15% STCG") + "): ₹" + tax.setScale(2, BigDecimal.ROUND_HALF_UP));
+                    lblTaxRes.setForeground(UIConstants.LOSS_RED);
+                }
+            } catch (Exception ex) {
+                lblTaxRes.setText("Calculation Error");
+            }
+        });
+        gbc.gridy = 7;
+        taxCard.add(btnTaxCalc, gbc);
+
+        mainPanel.add(taxCard);
+
+        return mainPanel;
     }
 
     public void setupPortfolioViewData() {

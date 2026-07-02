@@ -15,6 +15,8 @@ import com.niveshcore360.view.login.LoginView;
 import com.niveshcore360.view.portfolio.PortfolioView;
 import com.niveshcore360.view.report.ReportView;
 import com.niveshcore360.view.chatbot.ChatbotView;
+import com.niveshcore360.components.CommandPaletteDialog;
+import java.awt.event.KeyEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -84,6 +86,20 @@ public class MainFrame extends JFrame implements UserSession.SessionListener {
 
         // Register session state observer
         userSession.addListener(this);
+
+        // Global Command Palette Hotkey (Cmd/Ctrl + K)
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(e -> {
+            if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_K &&
+                ((e.getModifiersEx() & KeyEvent.META_DOWN_MASK) != 0 || (e.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0)) {
+                
+                SwingUtilities.invokeLater(() -> {
+                    CommandPaletteDialog palette = new CommandPaletteDialog(this, this);
+                    palette.setVisible(true);
+                });
+                return true;
+            }
+            return false;
+        });
 
         // Top level switcher (Authentication vs Workspace)
         topCardLayout = new CardLayout();

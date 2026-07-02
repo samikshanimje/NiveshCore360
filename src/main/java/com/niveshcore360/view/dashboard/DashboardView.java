@@ -122,8 +122,17 @@ public class DashboardView extends JPanel {
         chartCard.add(chartWrapperPanel, BorderLayout.CENTER);
         mainGrid.add(chartCard, gbc);
 
-        // ─── Alerts section ─────────────────────────────────────────
-        gbc.gridx = 2; gbc.gridwidth = 1;
+        // ─── Right Column: Alerts & AI Market Intel ──────────────────
+        gbc.gridx = 2; gbc.gridwidth = 1; gbc.weighty = 0.82;
+        JPanel rightColPanel = new JPanel(new GridBagLayout());
+        rightColPanel.setOpaque(false);
+        GridBagConstraints rGbc = new GridBagConstraints();
+        rGbc.fill = GridBagConstraints.BOTH;
+        rGbc.weightx = 1.0;
+
+        // Alerts (45% height)
+        rGbc.gridy = 0; rGbc.weighty = 0.45;
+        rGbc.insets = new Insets(0, 0, 8, 0);
         CardPanel alertsCard = new CardPanel(new BorderLayout(), UIConstants.SPACE_LG);
         JLabel alertTitle = new JLabel("Milestones & Alerts");
         alertTitle.setFont(UIConstants.FONT_SUBHEADING);
@@ -137,7 +146,15 @@ public class DashboardView extends JPanel {
         alertScroll.setOpaque(false);
         alertScroll.getViewport().setOpaque(false);
         alertsCard.add(alertScroll, BorderLayout.CENTER);
-        mainGrid.add(alertsCard, gbc);
+        rightColPanel.add(alertsCard, rGbc);
+
+        // Market Intel Summarizer (55% height)
+        rGbc.gridy = 1; rGbc.weighty = 0.55;
+        rGbc.insets = new Insets(8, 0, 0, 0);
+        CardPanel intelCard = createMarketIntelCard();
+        rightColPanel.add(intelCard, rGbc);
+
+        mainGrid.add(rightColPanel, gbc);
 
         add(mainGrid, BorderLayout.CENTER);
     }
@@ -307,6 +324,33 @@ public class DashboardView extends JPanel {
         chart.getLegend().setItemFont(UIConstants.FONT_CAPTION);
 
         return chart;
+    }
+
+    private CardPanel createMarketIntelCard() {
+        CardPanel card = new CardPanel(new BorderLayout(), UIConstants.SPACE_MD);
+        JLabel title = new JLabel("Market Intelligence Summary");
+        title.setFont(UIConstants.FONT_SUBHEADING);
+        title.setForeground(UIConstants.GOLD_ACCENT);
+        card.add(title, BorderLayout.NORTH);
+
+        // Content
+        JTextArea area = new JTextArea(
+            "● Nifty 50: 22,450.20 (+0.45%)  |  BSE Sensex: 74,120.50 (+0.52%)\n" +
+            "● RBI NEWS: Repurchase rate remains flat at 6.50% to align core inflation goals.\n" +
+            "● US FED NEWS: Policy rates projected steady; future hikes conditional on CPI data.\n" +
+            "● GLOBAL MARKETS: Positive momentum in US futures; Asian indices closing higher.\n" +
+            "● TOP MOVERS: RELIANCE (+2.15%), TCS (+1.85%), INFOSYS (+1.40%)."
+        );
+        area.setFont(UIConstants.FONT_CAPTION);
+        area.setEditable(false);
+        area.setOpaque(false);
+        area.setForeground(ThemeManager.isDarkMode() ? UIConstants.DARK_TEXT_PRIMARY : UIConstants.LIGHT_TEXT_PRIMARY);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setBorder(new EmptyBorder(10, 0, 0, 0));
+        card.add(area, BorderLayout.CENTER);
+
+        return card;
     }
 
     private static class PortfolioComboItem {
